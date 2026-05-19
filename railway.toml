@@ -1,0 +1,17 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && cd frontend && npm install && npm run build && cp -r dist/* ../public/"
+
+[deploy]
+startCommand = "node server/index.js"
+healthcheckPath = "/api/stats"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[environments.production.variables]
+NODE_ENV = "production"
+RUN_SCRAPER_ON_START = "false"
+# Set these in Railway Dashboard → Variables:
+# JWT_SECRET     = <strong random string>
+# GEMINI_API_KEY = <your Google AI key>
+# PORT is automatically set by Railway

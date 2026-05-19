@@ -1,0 +1,5 @@
+@import './styles/variables.css';
+@import './styles/global.css';
+@import './styles/components.css';
+
+/* Any specific component styles not using CSS modules can go here, but we prefer keeping them structured */
