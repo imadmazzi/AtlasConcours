@@ -20,6 +20,22 @@ app.use(express.urlencoded({ extended: true }));
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Route Cron Vercel
+app.get('/api/cron-scraper', (req, res) => {
+  console.log('⏰ [Vercel Cron] Triggered cron-scraper route...');
+  const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
+
+  // Trigger scrapers asynchronously to prevent Vercel execution timeouts
+  runAnapecScraper().catch(err => console.error('❌ [Vercel Cron] ANAPEC Scraper error:', err.message));
+  runJobScraper().catch(err => console.error('❌ [Vercel Cron] Job Scraper error:', err.message));
+  runScraper().catch(err => console.error('❌ [Vercel Cron] Concours Scraper error:', err.message));
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Scraping sequences triggered in the background.'
+  });
+});
+
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/concours', require('./routes/concours'));

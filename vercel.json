@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/index.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/cron-scraper",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "server/index.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-scraper",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
