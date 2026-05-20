@@ -114,29 +114,36 @@ async function processPipeline(items, type) {
         errorCount++;
         console.warn(`⚠️ API Fallback activé pour: ${item.title}`);
         item.rewritten = {
-          title: item.title,
+          title: item.title || 'Sans titre',
           description: item.description || "Détails non disponibles.",
           enterprise: item.enterprise || "Administration",
           location: item.location || "Maroc"
         };
       }
-      
-      if (type === 'concours') {
-        const slug = slugify(item.rewritten.title, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-        db.prepare("INSERT INTO concours").run(item.rewritten.title, slug, item.rewritten.description, "Concours", item.deadline, item.url);
-      } else {
-        db.prepare("INSERT INTO emplois").run(
-          item.rewritten.title,
-          item.rewritten.enterprise || "Administration",
-          item.rewritten.location || "Maroc",
-          item.rewritten.description,
-          item.url
-        );
+
+      // Ensure every field has a safe fallback value
+      const safeTitle       = item.rewritten?.title       || item.title       || 'Sans titre';
+      const safeDescription = item.rewritten?.description || item.description || 'Détails non disponibles.';
+      const safeEnterprise  = item.rewritten?.enterprise  || item.enterprise  || 'Administration';
+      const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
+      const safeDeadline    = item.deadline || '';
+      const safeUrl         = item.url || '';
+
+      try {
+        if (type === 'concours') {
+          const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
+          db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
+        } else {
+          db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
+        }
+        addedCount++;
+      } catch (insertErr) {
+        errorCount++;
+        console.error(`❌ Erreur insertion (${safeTitle}):`, insertErr.message);
       }
-      addedCount++;
     }
-    console.log(`✅ Lot de ${batch.length} inséré.`);
-    await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000)); // random delay 2-4s
+    console.log(`✅ Lot de ${batch.length} traité.`);
+    await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
   }
   
   return { added: addedCount, errors: errorCount };
@@ -152,15 +159,17 @@ async function runScraper() {
     
     const newItems = [];
     $('a.card.card-scale').each((i, el) => {
-      const link = baseUrl + $(el).attr('href');
+      const href = $(el).attr('href');
+      if (!href) return;
+      const link = baseUrl + href;
       if (existingLinks.has(link)) return;
-      
-      const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim();
+
+      const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
       let deadline = "";
       $(el).find('div, span, p').each((j, sel) => {
         if ($(sel).text().includes("Limite")) deadline = $(sel).text().split(':')[1]?.trim() || "";
       });
-      
+
       newItems.push({ title, url: link, deadline });
     });
 
@@ -178,9 +187,11 @@ async function runJobScraper() {
     
     const newItems = [];
     $('a.card.card-scale').each((i, el) => {
-      const link = baseUrl + $(el).attr('href');
+      const href = $(el).attr('href');
+      if (!href) return;
+      const link = baseUrl + href;
       if (existingLinks.has(link)) return;
-      newItems.push({ title: $(el).find('h2').text().trim(), url: link });
+      newItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
     });
 
     if (newItems.length > 0) await processPipeline(newItems.slice(0, 10), 'job');
@@ -204,21 +215,19 @@ async function runAnapecScraper() {
     rows.each((i, el) => {
       const linkEl = $(el).find('a.nyroModal');
       if (!linkEl.length) return;
-      const link = baseUrl + linkEl.attr('href');
+      const href = linkEl.attr('href');
+      if (!href) return;
+      const link = baseUrl + href;
       if (existingLinks.has(link)) {
         skippedCount++;
         return;
       }
       const tds = $(el).find('td');
-      const enterprise = tds.length > 1 ? tds.eq(1).text().trim() : "Administration";
-      const location = tds.length > 2 ? tds.eq(2).text().trim() : "Maroc";
-      
-      newItems.push({ 
-        title: linkEl.text().trim().replace(/\s+/g, ' '), 
-        url: link,
-        enterprise,
-        location
-      });
+      const enterprise = tds.length > 1 ? tds.eq(1).text().trim() || 'Administration' : 'Administration';
+      const location   = tds.length > 2 ? tds.eq(2).text().trim() || 'Maroc' : 'Maroc';
+      const title = linkEl.text().trim().replace(/\s+/g, ' ') || 'Offre d\'emploi';
+
+      newItems.push({ title, url: link, enterprise, location });
     });
 
     let stats = { added: 0, errors: 0 };
