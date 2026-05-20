@@ -92,16 +92,20 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
+// In Vercel serverless, just init the DB and export the app.
+// app.listen() and cron scheduling only run in a persistent Node process (local dev / Railway).
 db.init().then(() => {
-  // Initialiser les tâches automatisées après le chargement de la BD
-  initAutomation();
-
-  app.listen(PORT, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    initAutomation();
+    app.listen(PORT, () => {
+      console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
+    });
+  } else {
+    console.log('☁️ Vercel serverless mode — skipping app.listen and cron init.');
+  }
 }).catch(err => {
-  console.error('❌ Échec critique de l\'initialisation de la base de données :', err);
-  process.exit(1);
+  // Log but never crash the process — Vercel must stay alive to handle requests
+  console.error('⚠️ DB init warning (continuing with in-memory data):', err.message);
 });
 
 module.exports = app;

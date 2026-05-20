@@ -75,11 +75,22 @@ const db = {
         role: 'admin',
         created_at: new Date().toISOString()
       });
-      fs.writeFileSync(dbPath, JSON.stringify(initData, null, 2));
-      console.log('✅ DB JSON initialisée avec admin@atlasconcours.ma / Admin2026!');
+      try {
+        fs.writeFileSync(dbPath, JSON.stringify(initData, null, 2));
+        console.log('✅ DB JSON initialisée avec admin@atlasconcours.ma / Admin2026!');
+      } catch (e) {
+        // Read-only filesystem (e.g. Vercel serverless) — use in-memory default data
+        console.warn('⚠️ Cannot write db.json (read-only FS), using in-memory data:', e.code);
+        this.data = initData;
+        return;
+      }
     }
-    this.data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    console.log('✅ Loaded data from local db.json!');
+    try {
+      this.data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      console.log('✅ Loaded data from local db.json!');
+    } catch (e) {
+      console.warn('⚠️ Cannot read db.json, using default in-memory data:', e.code);
+    }
   },
 
   save: function() {
@@ -88,8 +99,13 @@ const db = {
         .then(() => console.log('💾 Saved to MongoDB Atlas!'))
         .catch(err => console.error('❌ Error saving to MongoDB Atlas:', err.message));
     } else {
-      fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2));
-      console.log('💾 Saved to local db.json!');
+      try {
+        fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2));
+        console.log('💾 Saved to local db.json!');
+      } catch (e) {
+        // Silently skip on read-only filesystems (Vercel serverless)
+        console.warn('⚠️ Cannot write db.json (read-only FS), changes are in-memory only:', e.code);
+      }
     }
   },
 
