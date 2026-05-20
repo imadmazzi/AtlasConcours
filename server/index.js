@@ -36,6 +36,34 @@ app.get('/api/cron-scraper', (req, res) => {
   });
 });
 
+// Health & DB Diagnostics
+app.get('/api/health', (req, res) => {
+  const mongoConfigured = !!process.env.MONGODB_URI;
+  const storageMode = db.storageMode || 'unknown';
+
+  if (process.env.VERCEL && !mongoConfigured) {
+    return res.status(200).json({
+      status: 'degraded',
+      storageMode,
+      persistent: false,
+      warning: 'MONGODB_URI is not set. Data will not persist between serverless invocations.',
+      action: 'Go to Vercel Dashboard → Settings → Environment Variables and add MONGODB_URI with your MongoDB Atlas connection string.'
+    });
+  }
+
+  res.status(200).json({
+    status: 'ok',
+    storageMode,
+    persistent: storageMode === 'mongodb',
+    mongoConfigured,
+    records: {
+      concours: db.data.concours?.length || 0,
+      emplois: db.data.emplois?.length || 0,
+      articles: db.data.articles?.length || 0
+    }
+  });
+});
+
 // Routes API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/concours', require('./routes/concours'));

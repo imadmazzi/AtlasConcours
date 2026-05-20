@@ -7,7 +7,6 @@ const dbPath = process.env.DATA_DIR
   ? path.join(process.env.DATA_DIR, 'db.json')
   : path.join(__dirname, '../db.json');
 
-
 const defaultData = {
   users: [],
   concours: [
@@ -22,24 +21,44 @@ const defaultData = {
   ]
 };
 
+// ─── Serverless MongoDB Connection Cache ────────────────────────────────────
+// Vercel reuses Node.js module scope between warm invocations on the same
+// container, so caching the MongoClient here avoids a new connection on every
+// request (which would exhaust the Atlas free-tier connection pool).
+let _cachedClient = null;
+let _cachedCollection = null;
+
+async function getMongoCollection() {
+  if (_cachedCollection) return _cachedCollection;          // reuse warm connection
+
+  const { MongoClient } = require('mongodb');
+  _cachedClient = new MongoClient(process.env.MONGODB_URI, {
+    maxPoolSize: 5,           // keep pool small for serverless
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 5000,
+  });
+  await _cachedClient.connect();
+  _cachedCollection = _cachedClient.db().collection('store');
+  console.log('🔌 MongoDB Atlas — new connection established (will be reused).');
+  return _cachedCollection;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 const db = {
-  data: defaultData,
-  
+  data: JSON.parse(JSON.stringify(defaultData)),   // safe deep-clone of defaults
+  storageMode: 'memory',                           // 'mongodb' | 'local' | 'memory'
+
   init: async function() {
     if (process.env.MONGODB_URI) {
-      console.log('🔌 Connecting to MongoDB Atlas...');
       try {
-        const { MongoClient } = require('mongodb');
-        this.client = new MongoClient(process.env.MONGODB_URI);
-        await this.client.connect();
-        this.db = this.client.db();
-        this.collection = this.db.collection('store');
+        this.collection = await getMongoCollection();
         const doc = await this.collection.findOne({ _id: 'main_db' });
         if (doc && doc.data) {
           this.data = doc.data;
+          this.storageMode = 'mongodb';
           console.log('✅ Loaded data from MongoDB Atlas!');
         } else {
-          // Initialize with default admin user
+          // First-ever run — seed the database with default data + admin user
           const hashedPassword = bcrypt.hashSync('Admin2026!', 10);
           const initData = JSON.parse(JSON.stringify(defaultData));
           initData.users.push({
@@ -52,14 +71,31 @@ const db = {
           });
           await this.collection.insertOne({ _id: 'main_db', data: initData });
           this.data = initData;
-          console.log('✅ Initialized MongoDB Atlas with default data!');
+          this.storageMode = 'mongodb';
+          console.log('✅ Seeded MongoDB Atlas with default data and admin user.');
         }
       } catch (err) {
-        console.error('❌ MongoDB Atlas connection error, falling back to local files:', err.message);
+        console.error('❌ MongoDB Atlas error, falling back to local:', err.message);
         this.loadLocal();
       }
     } else {
-      this.loadLocal();
+      if (process.env.VERCEL) {
+        // Running on Vercel without a database — data will not persist between requests!
+        console.warn('');
+        console.warn('⚠️  ════════════════════════════════════════════════════════');
+        console.warn('⚠️  ATTENTION: MONGODB_URI is NOT set in Vercel environment!');
+        console.warn('⚠️  Data scraped in this request WILL BE LOST when this');
+        console.warn('⚠️  serverless function cold-starts again.');
+        console.warn('⚠️  ');
+        console.warn('⚠️  ACTION REQUIRED → Go to:');
+        console.warn('⚠️  Vercel Dashboard > Your Project > Settings > Environment Variables');
+        console.warn('⚠️  and add:  MONGODB_URI = <your MongoDB Atlas connection string>');
+        console.warn('⚠️  ════════════════════════════════════════════════════════');
+        console.warn('');
+        this.storageMode = 'memory';
+      } else {
+        this.loadLocal();
+      }
     }
   },
 
