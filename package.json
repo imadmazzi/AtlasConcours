@@ -9,7 +9,7 @@
     "dev:server": "nodemon server/index.js",
     "dev:client": "cd frontend && npm run dev",
     "dev": "concurrently --kill-others-on-fail --prefix-colors \"blue,green\" --names \"API,UI\" \"npm run dev:server\" \"npm run dev:client\"",
-    "build": "cd frontend && npm install && npm run build && xcopy /E /I /Y dist ..\\public",
+    "build": "cd frontend && npm install && npm run build && node -e \"const fs=require('fs'); fs.mkdirSync('public', {recursive:true}); fs.cpSync('frontend/dist', 'public', {recursive:true})\"",
     "build:unix": "cd frontend && npm install && npm run build && cp -r dist/* ../public/",
     "seed": "node server/seed.js",
     "test-scrape": "node server/test-scrape.js"
