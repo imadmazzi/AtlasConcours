@@ -4,6 +4,7 @@ jspm_packages/
 web_stage/
 
 # Frontend build outputs
+dist/
 frontend/dist/
 frontend/node_modules/
 
