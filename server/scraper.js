@@ -9,17 +9,27 @@ const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "VOTRE_CLE_API");
 const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
+// ─── Serverless-aware constants ─────────────────────────────────────────────
+const IS_VERCEL      = !!process.env.VERCEL;
+const ITEM_LIMIT     = IS_VERCEL ? 3  : 15;   // max items per source per run
+const FETCH_TIMEOUT  = IS_VERCEL ? 5000 : 15000;
+const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
+const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
+const BATCH_DELAY    = IS_VERCEL ? 0   : 2000; // inter-batch sleep (ms)
+const REWRITE_BATCH  = IS_VERCEL ? 1   : 3;    // items per AI rewrite call
+// ────────────────────────────────────────────────────────────────────────────
+
 /**
  * Helper: Requête avec mécanisme de retry
  */
-async function fetchWithRetry(url, options = {}, retries = 2) {
+async function fetchWithRetry(url, options = {}, retries = RETRY_COUNT) {
   for (let i = 0; i <= retries; i++) {
     try {
-      return await axios.get(url, { ...options, timeout: 15000 });
+      return await axios.get(url, { ...options, timeout: FETCH_TIMEOUT });
     } catch (err) {
       if (i === retries) throw err;
       console.warn(`⚠️ Retrying (${i + 1}/${retries}) for ${url}...`);
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
     }
   }
 }
@@ -79,73 +89,99 @@ async function rewriteBatch(items, type = "concours") {
 }
 
 /**
- * Pipeline de traitement commun
+ * Insert a single processed item into the database immediately.
+ * Returns true on success, false on error.
+ */
+function insertItemNow(item, type) {
+  const safeTitle       = item.rewritten?.title       || item.title       || 'Sans titre';
+  const safeDescription = item.rewritten?.description || item.description || 'Détails non disponibles.';
+  const safeEnterprise  = item.rewritten?.enterprise  || item.enterprise  || 'Administration';
+  const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
+  const safeDeadline    = item.deadline || '';
+  const safeUrl         = item.url || '';
+
+  try {
+    if (type === 'concours') {
+      const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
+      db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
+    } else {
+      db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
+    }
+    console.log(`  💾 Inserted: ${safeTitle.substring(0, 60)}…`);
+    return true;
+  } catch (insertErr) {
+    console.error(`  ❌ Insert failed (${safeTitle.substring(0, 40)}):`, insertErr.message);
+    return false;
+  }
+}
+
+/**
+ * Pipeline de traitement — insère chaque item immédiatement après rewrite.
+ * On Vercel, processes REWRITE_BATCH (1) item at a time so each DB insert
+ * happens within the execution window.
  */
 async function processPipeline(items, type) {
-  console.log(`⚙️ Traitement de ${items.length} nouveaux éléments (${type})...`);
+  console.log(`⚙️ Processing ${items.length} new items (${type}) [${IS_VERCEL ? 'VERCEL' : 'LOCAL'} mode]…`);
   let addedCount = 0;
   let errorCount = 0;
-  
-  // 1. Fetch des détails en parallèle (limité par lot de 5)
-  const processed = [];
-  for (let i = 0; i < items.length; i += 5) {
-    const batch = items.slice(i, i + 5);
-    const detailedBatch = await Promise.all(batch.map(async (item) => {
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    // 1. Fetch detail page for this single item
+    try {
+      const res = await fetchWithRetry(item.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent });
+      const $ = cheerio.load(res.data);
+      const description = $('.bloc_offre_home').html() || $('.detail-content').html() || $('.card-body').html() || $.html() || "Détails non disponibles.";
+      item.description = description.trim();
+    } catch (err) {
+      item.description = "Détails non disponibles.";
+    }
+
+    // 2. Collect a micro-batch for AI rewrite (1 on Vercel, up to REWRITE_BATCH locally)
+    const microBatch = [item];
+    while (microBatch.length < REWRITE_BATCH && i + 1 < items.length) {
+      i++;
+      const next = items[i];
       try {
-        const res = await fetchWithRetry(item.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent });
+        const res = await fetchWithRetry(next.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent });
         const $ = cheerio.load(res.data);
         const description = $('.bloc_offre_home').html() || $('.detail-content').html() || $('.card-body').html() || $.html() || "Détails non disponibles.";
-        return { ...item, description: description.trim() };
+        next.description = description.trim();
       } catch (err) {
-        return { ...item, description: "Détails non disponibles." };
+        next.description = "Détails non disponibles.";
       }
-    }));
-    processed.push(...detailedBatch);
-    await new Promise(r => setTimeout(r, 1000));
-  }
+      microBatch.push(next);
+    }
 
-  // 2. Réécriture par lots de 3
-  for (let i = 0; i < processed.length; i += 3) {
-    const batch = processed.slice(i, i + 3);
-    const rewrittenBatch = await rewriteBatch(batch, type);
-    
-    for (const item of rewrittenBatch) {
-      if (!item.rewritten) {
-        errorCount++;
-        console.warn(`⚠️ API Fallback activé pour: ${item.title}`);
-        item.rewritten = {
-          title: item.title || 'Sans titre',
-          description: item.description || "Détails non disponibles.",
-          enterprise: item.enterprise || "Administration",
-          location: item.location || "Maroc"
+    // 3. AI Rewrite
+    const rewrittenBatch = await rewriteBatch(microBatch, type);
+
+    // 4. Insert EACH item into DB immediately
+    for (const processed of rewrittenBatch) {
+      if (!processed.rewritten) {
+        processed.rewritten = {
+          title: processed.title || 'Sans titre',
+          description: processed.description || "Détails non disponibles.",
+          enterprise: processed.enterprise || "Administration",
+          location: processed.location || "Maroc"
         };
       }
 
-      // Ensure every field has a safe fallback value
-      const safeTitle       = item.rewritten?.title       || item.title       || 'Sans titre';
-      const safeDescription = item.rewritten?.description || item.description || 'Détails non disponibles.';
-      const safeEnterprise  = item.rewritten?.enterprise  || item.enterprise  || 'Administration';
-      const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
-      const safeDeadline    = item.deadline || '';
-      const safeUrl         = item.url || '';
-
-      try {
-        if (type === 'concours') {
-          const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-          db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
-        } else {
-          db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
-        }
+      if (insertItemNow(processed, type)) {
         addedCount++;
-      } catch (insertErr) {
+      } else {
         errorCount++;
-        console.error(`❌ Erreur insertion (${safeTitle}):`, insertErr.message);
       }
     }
-    console.log(`✅ Lot de ${batch.length} traité.`);
-    await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+
+    // 5. Small delay between batches (skipped on Vercel)
+    if (BATCH_DELAY > 0 && i < items.length - 1) {
+      await new Promise(r => setTimeout(r, BATCH_DELAY + Math.random() * 1000));
+    }
   }
-  
+
+  console.log(`📊 Pipeline done: ${addedCount} added, ${errorCount} errors.`);
   return { added: addedCount, errors: errorCount };
 }
 
@@ -173,8 +209,13 @@ async function runScraper() {
       newItems.push({ title, url: link, deadline });
     });
 
-    if (newItems.length > 0) await processPipeline(newItems.slice(0, 10), 'concours');
-  } catch (err) { console.error("❌ Erreur Scraper Concours:", err.message); }
+    if (newItems.length > 0) {
+      const limited = newItems.slice(0, ITEM_LIMIT);
+      console.log(`📋 Concours: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      return await processPipeline(limited, 'concours');
+    }
+    return { added: 0, errors: 0 };
+  } catch (err) { console.error("❌ Erreur Scraper Concours:", err.message); return { added: 0, errors: 0 }; }
 }
 
 async function runJobScraper() {
@@ -194,8 +235,13 @@ async function runJobScraper() {
       newItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
     });
 
-    if (newItems.length > 0) await processPipeline(newItems.slice(0, 10), 'job');
-  } catch (err) { console.error("❌ Erreur Scraper Emplois:", err.message); }
+    if (newItems.length > 0) {
+      const limited = newItems.slice(0, ITEM_LIMIT);
+      console.log(`📋 Emplois: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      return await processPipeline(limited, 'job');
+    }
+    return { added: 0, errors: 0 };
+  } catch (err) { console.error("❌ Erreur Scraper Emplois:", err.message); return { added: 0, errors: 0 }; }
 }
 
 async function runAnapecScraper() {
@@ -232,14 +278,17 @@ async function runAnapecScraper() {
 
     let stats = { added: 0, errors: 0 };
     if (newItems.length > 0) {
-      stats = await processPipeline(newItems.slice(0, 15), 'job');
+      const limited = newItems.slice(0, ITEM_LIMIT);
+      console.log(`📋 ANAPEC: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      stats = await processPipeline(limited, 'job');
     }
     
     console.log(`📊 Bilan ANAPEC: ${rows.length} analysés, ${skippedCount} ignorés (doublons), ${stats?.added || 0} ajoutés, ${stats?.errors || 0} erreurs.`);
+    return stats;
   } catch (err) { 
     console.error("❌ Erreur Scraper ANAPEC:", err.message); 
+    return { added: 0, errors: 0 };
   }
 }
 
 module.exports = { runScraper, runJobScraper, runAnapecScraper };
-

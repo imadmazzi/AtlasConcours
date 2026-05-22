@@ -20,19 +20,42 @@ app.use(express.urlencoded({ extended: true }));
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Route Cron Vercel
-app.get('/api/cron-scraper', (req, res) => {
+// Route Cron Vercel — runs scrapers sequentially and AWAITS completion before
+// sending the response.  On Vercel, once res.send() is called the function is
+// killed, so fire-and-forget promises never finish.  Running ONE source per
+// cron invocation keeps us comfortably within the 10-second limit.
+// The cron schedule can hit this endpoint 3× with ?source=anapec|jobs|concours,
+// or once with no param to run all sequentially.
+app.get('/api/cron-scraper', async (req, res) => {
+  const startMs = Date.now();
   console.log('⏰ [Vercel Cron] Triggered cron-scraper route...');
   const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
+  const source = (req.query.source || 'all').toLowerCase();
 
-  // Trigger scrapers asynchronously to prevent Vercel execution timeouts
-  runAnapecScraper().catch(err => console.error('❌ [Vercel Cron] ANAPEC Scraper error:', err.message));
-  runJobScraper().catch(err => console.error('❌ [Vercel Cron] Job Scraper error:', err.message));
-  runScraper().catch(err => console.error('❌ [Vercel Cron] Concours Scraper error:', err.message));
+  const results = {};
+  try {
+    if (source === 'anapec' || source === 'all') {
+      results.anapec = await runAnapecScraper();
+    }
+    if (source === 'jobs' || source === 'all') {
+      results.jobs = await runJobScraper();
+    }
+    if (source === 'concours' || source === 'all') {
+      results.concours = await runScraper();
+    }
+  } catch (err) {
+    console.error('❌ [Vercel Cron] Scraper error:', err.message);
+    results.error = err.message;
+  }
+
+  const durationMs = Date.now() - startMs;
+  console.log(`⏰ [Vercel Cron] Completed in ${durationMs}ms`);
 
   res.status(200).json({
     status: 'success',
-    message: 'Scraping sequences triggered in the background.'
+    durationMs,
+    source,
+    results
   });
 });
 

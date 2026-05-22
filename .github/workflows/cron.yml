@@ -5,8 +5,22 @@ on:
   workflow_dispatch:
 
 jobs:
-  cron:
+  scrape-anapec:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Scraper
-        run: curl -X GET https://atlasconcours.vercel.app/api/cron-scraper
+      - name: Scrape ANAPEC jobs
+        run: curl -sS -m 30 "https://atlasconcours.vercel.app/api/cron-scraper?source=anapec"
+
+  scrape-jobs:
+    runs-on: ubuntu-latest
+    needs: scrape-anapec
+    steps:
+      - name: Scrape Emploi-Public jobs
+        run: curl -sS -m 30 "https://atlasconcours.vercel.app/api/cron-scraper?source=jobs"
+
+  scrape-concours:
+    runs-on: ubuntu-latest
+    needs: scrape-jobs
+    steps:
+      - name: Scrape Emploi-Public concours
+        run: curl -sS -m 30 "https://atlasconcours.vercel.app/api/cron-scraper?source=concours"
