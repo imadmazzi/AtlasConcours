@@ -2,6 +2,20 @@ const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
+// ─── Sanitize MONGODB_URI once at module load ────────────────────────────────
+// Vercel env vars pasted from dashboards often contain trailing spaces, hidden
+// newlines (\n, \r), or wrapping quotes (""/''). The MongoDB driver treats these
+// as part of the connection string, causing silent auth/DNS failures.
+let mongoUri = process.env.MONGODB_URI;
+if (mongoUri) {
+  const rawLength = mongoUri.length;
+  mongoUri = mongoUri.trim().replace(/^["']|["']$/g, '').replace(/[\r\n]+/g, '');
+  if (mongoUri.length !== rawLength) {
+    console.warn(`⚠️  MONGODB_URI was sanitized: removed ${rawLength - mongoUri.length} hidden char(s) (spaces/quotes/newlines).`);
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Support Render Persistent Disk via DATA_DIR env var, fallback to project root
 const dbPath = process.env.DATA_DIR
   ? path.join(process.env.DATA_DIR, 'db.json')
@@ -31,7 +45,7 @@ let _cachedCollection = null;
 async function getMongoCollection() {
   if (_cachedCollection) return _cachedCollection;          // reuse warm connection
 
-  const uri = process.env.MONGODB_URI;
+  const uri = mongoUri;
 
   // Log a sanitized version of the URI so we can verify the right var is being read
   // without leaking credentials into Vercel logs.
@@ -75,7 +89,7 @@ const db = {
   storageMode: 'memory',                           // 'mongodb' | 'local' | 'memory'
 
   init: async function() {
-    if (process.env.MONGODB_URI) {
+    if (mongoUri) {
       try {
         this.collection = await getMongoCollection();
         const doc = await this.collection.findOne({ _id: 'main_db' });
@@ -168,7 +182,7 @@ const db = {
   },
 
   save: function() {
-    if (process.env.MONGODB_URI && this.collection) {
+    if (mongoUri && this.collection) {
       this.collection.updateOne({ _id: 'main_db' }, { $set: { data: this.data } })
         .then(() => console.log('💾 Saved to MongoDB Atlas!'))
         .catch(err => console.error('❌ Error saving to MongoDB Atlas:', err.message));
