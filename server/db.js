@@ -31,13 +31,39 @@ let _cachedCollection = null;
 async function getMongoCollection() {
   if (_cachedCollection) return _cachedCollection;          // reuse warm connection
 
+  const uri = process.env.MONGODB_URI;
+
+  // Log a sanitized version of the URI so we can verify the right var is being read
+  // without leaking credentials into Vercel logs.
+  const sanitized = uri
+    ? uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')
+    : '(undefined)';
+  console.log('🔑 MONGODB_URI detected:', sanitized);
+
   const { MongoClient } = require('mongodb');
-  _cachedClient = new MongoClient(process.env.MONGODB_URI, {
+  _cachedClient = new MongoClient(uri, {
     maxPoolSize: 5,           // keep pool small for serverless
-    serverSelectionTimeoutMS: 5000,
-    connectTimeoutMS: 5000,
+    serverSelectionTimeoutMS: 8000,
+    connectTimeoutMS: 8000,
+    socketTimeoutMS: 10000,
   });
-  await _cachedClient.connect();
+
+  try {
+    await _cachedClient.connect();
+  } catch (connErr) {
+    // ── CRITICAL: Surface the EXACT reason MongoDB failed ──────────────
+    console.error('══════════════════════════════════════════════════════════');
+    console.error('MONGODB_CONNECTION_ERROR:', connErr.message);
+    console.error('Error name :', connErr.name);
+    console.error('Error code :', connErr.code || connErr.codeName || 'N/A');
+    console.error('Stack trace:', connErr.stack);
+    console.error('══════════════════════════════════════════════════════════');
+    // Reset cached refs so a future warm invocation can retry cleanly
+    _cachedClient = null;
+    _cachedCollection = null;
+    throw connErr;   // re-throw so init() catch block handles the fallback
+  }
+
   _cachedCollection = _cachedClient.db().collection('store');
   console.log('🔌 MongoDB Atlas — new connection established (will be reused).');
   return _cachedCollection;
@@ -75,7 +101,19 @@ const db = {
           console.log('✅ Seeded MongoDB Atlas with default data and admin user.');
         }
       } catch (err) {
-        console.error('❌ MongoDB Atlas error, falling back to local:', err.message);
+        console.error('══════════════════════════════════════════════════════════');
+        console.error('❌ MongoDB Atlas INIT FAILED — falling back to local/memory.');
+        console.error('MONGODB_CONNECTION_ERROR:', err.message, err.stack);
+        console.error('Error code:', err.code || err.codeName || 'N/A');
+        if (err.message && err.message.includes('Authentication failed')) {
+          console.error('💡 HINT: Check your MONGODB_URI username/password in Vercel env vars.');
+        } else if (err.message && (err.message.includes('ETIMEDOUT') || err.message.includes('connect ECONNREFUSED') || err.message.includes('Server selection timed out'))) {
+          console.error('💡 HINT: Your IP is likely NOT whitelisted in MongoDB Atlas.');
+          console.error('   → Go to Atlas > Network Access > Add 0.0.0.0/0 to allow all IPs (required for Vercel).');
+        } else if (err.message && err.message.includes('querySrv ENOTFOUND')) {
+          console.error('💡 HINT: The cluster hostname in MONGODB_URI cannot be resolved. Check the connection string.');
+        }
+        console.error('══════════════════════════════════════════════════════════');
         this.loadLocal();
       }
     } else {
