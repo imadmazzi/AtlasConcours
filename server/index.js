@@ -31,17 +31,18 @@ app.get('/api/cron-scraper', async (req, res) => {
   console.log('⏰ [Vercel Cron] Triggered cron-scraper route...');
   const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
   const source = (req.query.source || 'all').toLowerCase();
+  const force = req.query.force === 'true';
 
   const results = {};
   try {
     if (source === 'anapec' || source === 'all') {
-      results.anapec = await runAnapecScraper();
+      results.anapec = await runAnapecScraper(force);
     }
     if (source === 'jobs' || source === 'all') {
-      results.jobs = await runJobScraper();
+      results.jobs = await runJobScraper(force);
     }
     if (source === 'concours' || source === 'all') {
-      results.concours = await runScraper();
+      results.concours = await runScraper(force);
     }
   } catch (err) {
     console.error('❌ [Vercel Cron] Scraper error:', err.message);

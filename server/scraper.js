@@ -185,7 +185,7 @@ async function processPipeline(items, type) {
   return { added: addedCount, errors: errorCount };
 }
 
-async function runScraper() {
+async function runScraper(force = false) {
   console.log("🚀 Scraper Concours (Optimisé)...");
   const baseUrl = "https://www.emploi-public.ma";
   try {
@@ -198,7 +198,7 @@ async function runScraper() {
       const href = $(el).attr('href');
       if (!href) return;
       const link = baseUrl + href;
-      if (existingLinks.has(link)) return;
+      if (!force && existingLinks.has(link)) return;
 
       const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
       let deadline = "";
@@ -218,7 +218,7 @@ async function runScraper() {
   } catch (err) { console.error("❌ Erreur Scraper Concours:", err.message); return { added: 0, errors: 0 }; }
 }
 
-async function runJobScraper() {
+async function runJobScraper(force = false) {
   console.log("🚀 Scraper Emplois (Optimisé)...");
   const baseUrl = "https://www.emploi-public.ma";
   try {
@@ -231,7 +231,7 @@ async function runJobScraper() {
       const href = $(el).attr('href');
       if (!href) return;
       const link = baseUrl + href;
-      if (existingLinks.has(link)) return;
+      if (!force && existingLinks.has(link)) return;
       newItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
     });
 
@@ -244,7 +244,7 @@ async function runJobScraper() {
   } catch (err) { console.error("❌ Erreur Scraper Emplois:", err.message); return { added: 0, errors: 0 }; }
 }
 
-async function runAnapecScraper() {
+async function runAnapecScraper(force = false) {
   console.log("🚀 Scraper ANAPEC (Optimisé)...");
   const baseUrl = "https://www.anapec.org";
   try {
@@ -264,7 +264,7 @@ async function runAnapecScraper() {
       const href = linkEl.attr('href');
       if (!href) return;
       const link = baseUrl + href;
-      if (existingLinks.has(link)) {
+      if (!force && existingLinks.has(link)) {
         skippedCount++;
         return;
       }
