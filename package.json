@@ -12,7 +12,8 @@
     "build": "cd frontend && npm install && npm run build && node -e \"const fs=require('fs'); fs.mkdirSync('../dist', {recursive:true}); fs.cpSync('dist', '../dist', {recursive:true})\"",
     "build:unix": "cd frontend && npm install && npm run build && cp -r dist/* ../dist/",
     "seed": "node server/seed.js",
-    "test-scrape": "node server/test-scrape.js"
+    "test-scrape": "node server/test-scrape.js",
+    "scrape:prod": "node run-prod-scrape.js"
   },
   "keywords": [
     "concours",
