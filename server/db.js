@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const dns = require('dns');
+const https = require('https');
 const bcrypt = require('bcryptjs');
 
 // ─── Sanitize MONGODB_URI once at module load ────────────────────────────────
@@ -12,6 +14,120 @@ if (mongoUri) {
   mongoUri = mongoUri.trim().replace(/^["']|["']$/g, '').replace(/[\r\n]+/g, '');
   if (mongoUri.length !== rawLength) {
     console.warn(`⚠️  MONGODB_URI was sanitized: removed ${rawLength - mongoUri.length} hidden char(s) (spaces/quotes/newlines).`);
+  }
+}
+
+let _mongoUriConfigured = false;
+
+function dohLookup(provider, name, type) {
+  const url = `${provider}?name=${encodeURIComponent(name)}&type=${encodeURIComponent(type)}`;
+
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { accept: 'application/dns-json' }, timeout: 8000 }, (res) => {
+      let body = '';
+      res.setEncoding('utf8');
+      res.on('data', chunk => { body += chunk; });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          reject(new Error(`DNS-over-HTTPS ${type} lookup failed with HTTP ${res.statusCode}`));
+          return;
+        }
+
+        try {
+          resolve(JSON.parse(body).Answer || []);
+        } catch (err) {
+          reject(new Error(`DNS-over-HTTPS ${type} response was not valid JSON: ${err.message}`));
+        }
+      });
+    });
+
+    req.on('timeout', () => req.destroy(new Error(`DNS-over-HTTPS ${type} lookup timed out`)));
+    req.on('error', reject);
+  });
+}
+
+async function lookupWithDoh(name, type) {
+  const providers = ['https://cloudflare-dns.com/dns-query', 'https://dns.google/resolve'];
+  let lastError;
+
+  for (const provider of providers) {
+    try {
+      return await dohLookup(provider, name, type);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+
+  throw lastError || new Error(`DNS-over-HTTPS ${type} lookup failed`);
+}
+
+function parseTxtOptions(answer) {
+  return (answer.data || '').replace(/^"|"$/g, '').replace(/"\s+"/g, '').trim();
+}
+
+async function expandMongoSrvUri(uri) {
+  const parsed = new URL(uri);
+  const hostname = parsed.hostname;
+  const srvName = `_mongodb._tcp.${hostname}`;
+  const srvAnswers = await lookupWithDoh(srvName, 'SRV');
+  const hosts = srvAnswers
+    .map(answer => String(answer.data || '').trim().split(/\s+/))
+    .filter(parts => parts.length >= 4)
+    .map(parts => `${parts[3].replace(/\.$/, '')}:${parts[2]}`);
+
+  if (hosts.length === 0) {
+    throw new Error(`No SRV records found for ${srvName}`);
+  }
+
+  const params = new URLSearchParams(parsed.searchParams);
+  const txtAnswers = await lookupWithDoh(hostname, 'TXT').catch(err => {
+    console.warn(`MongoDB TXT lookup skipped: ${err.message}`);
+    return [];
+  });
+
+  for (const answer of txtAnswers) {
+    const txtParams = new URLSearchParams(parseTxtOptions(answer));
+    for (const [key, value] of txtParams.entries()) {
+      if (!params.has(key)) params.set(key, value);
+    }
+  }
+
+  if (!params.has('tls') && !params.has('ssl')) {
+    params.set('tls', 'true');
+  }
+
+  const auth = parsed.username
+    ? `${parsed.username}${parsed.password ? `:${parsed.password}` : ''}@`
+    : '';
+  const pathPart = parsed.pathname && parsed.pathname !== '/' ? parsed.pathname : '';
+  const query = params.toString();
+
+  return `mongodb://${auth}${hosts.join(',')}${pathPart}${query ? `?${query}` : ''}`;
+}
+
+async function configureMongoUri() {
+  if (_mongoUriConfigured || !mongoUri) return;
+  _mongoUriConfigured = true;
+
+  if (!mongoUri.startsWith('mongodb+srv://')) return;
+
+  const dnsServers = (process.env.MONGODB_DNS_SERVERS || '1.1.1.1,8.8.8.8')
+    .split(',')
+    .map(server => server.trim())
+    .filter(Boolean);
+
+  if (dnsServers.length > 0) {
+    dns.setServers(dnsServers);
+  }
+
+  if (process.env.MONGODB_EXPAND_SRV === 'false') return;
+
+  try {
+    mongoUri = await expandMongoSrvUri(mongoUri);
+    process.env.MONGODB_URI = mongoUri;
+    console.log('Expanded MongoDB SRV URI through DNS-over-HTTPS.');
+  } catch (err) {
+    console.warn(`MongoDB SRV expansion skipped: ${err.message}`);
   }
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -45,6 +161,7 @@ let _cachedCollection = null;
 async function getMongoCollection() {
   if (_cachedCollection) return _cachedCollection;          // reuse warm connection
 
+  await configureMongoUri();
   const uri = mongoUri;
 
   // Log a sanitized version of the URI so we can verify the right var is being read
@@ -87,6 +204,7 @@ async function getMongoCollection() {
 const db = {
   data: JSON.parse(JSON.stringify(defaultData)),   // safe deep-clone of defaults
   storageMode: 'memory',                           // 'mongodb' | 'local' | 'memory'
+  pendingSave: null,
 
   init: async function() {
     if (mongoUri) {
@@ -183,17 +301,40 @@ const db = {
 
   save: function() {
     if (mongoUri && this.collection) {
-      this.collection.updateOne({ _id: 'main_db' }, { $set: { data: this.data } })
+      this.pendingSave = this.collection.updateOne(
+        { _id: 'main_db' },
+        { $set: { data: this.data } },
+        { upsert: true }
+      )
         .then(() => console.log('💾 Saved to MongoDB Atlas!'))
         .catch(err => console.error('❌ Error saving to MongoDB Atlas:', err.message));
+      return this.pendingSave;
     } else {
       try {
         fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2));
         console.log('💾 Saved to local db.json!');
+        this.pendingSave = Promise.resolve();
       } catch (e) {
         // Silently skip on read-only filesystems (Vercel serverless)
         console.warn('⚠️ Cannot write db.json (read-only FS), changes are in-memory only:', e.code);
+        this.pendingSave = Promise.resolve();
       }
+    }
+    return this.pendingSave;
+  },
+
+  flush: async function() {
+    if (this.pendingSave) {
+      await this.pendingSave;
+    }
+
+    if (mongoUri && this.collection && this.storageMode === 'mongodb') {
+      await this.collection.updateOne(
+        { _id: 'main_db' },
+        { $set: { data: this.data } },
+        { upsert: true }
+      );
+      console.log('💾 MongoDB Atlas flush confirmed.');
     }
   },
 

@@ -7,6 +7,10 @@ const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const dbReady = db.init().catch(err => {
+  // Log but never crash the process — Vercel must stay alive to handle requests.
+  console.error('⚠️ DB init warning (continuing with in-memory data):', err.message);
+});
 
 // Automatisation (Scraper)
 const { initAutomation } = require('./automation');
@@ -19,6 +23,15 @@ app.use(express.urlencoded({ extended: true }));
 
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, '../public')));
+
+app.use('/api', async (req, res, next) => {
+  try {
+    await dbReady;
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Route Cron Vercel — runs scrapers sequentially and AWAITS completion before
 // sending the response.  On Vercel, once res.send() is called the function is
@@ -35,6 +48,10 @@ app.get('/api/cron-scraper', async (req, res) => {
 
   const results = {};
   try {
+    if (db.storageMode !== 'mongodb') {
+      throw new Error(`Production scraper requires MongoDB persistence. Active storage mode: ${db.storageMode}`);
+    }
+
     if (source === 'anapec' || source === 'all') {
       results.anapec = await runAnapecScraper(force);
     }
@@ -44,6 +61,7 @@ app.get('/api/cron-scraper', async (req, res) => {
     if (source === 'concours' || source === 'all') {
       results.concours = await runScraper(force);
     }
+    await db.flush();
   } catch (err) {
     console.error('❌ [Vercel Cron] Scraper error:', err.message);
     results.error = err.message;
@@ -52,8 +70,8 @@ app.get('/api/cron-scraper', async (req, res) => {
   const durationMs = Date.now() - startMs;
   console.log(`⏰ [Vercel Cron] Completed in ${durationMs}ms`);
 
-  res.status(200).json({
-    status: 'success',
+  res.status(results.error ? 500 : 200).json({
+    status: results.error ? 'error' : 'success',
     durationMs,
     source,
     results
@@ -146,7 +164,7 @@ app.get('*', (req, res) => {
 
 // In Vercel serverless, just init the DB and export the app.
 // app.listen() and cron scheduling only run in a persistent Node process (local dev / Railway).
-db.init().then(() => {
+dbReady.then(() => {
   if (!process.env.VERCEL) {
     initAutomation();
     app.listen(PORT, () => {
@@ -155,9 +173,6 @@ db.init().then(() => {
   } else {
     console.log('☁️ Vercel serverless mode — skipping app.listen and cron init.');
   }
-}).catch(err => {
-  // Log but never crash the process — Vercel must stay alive to handle requests
-  console.error('⚠️ DB init warning (continuing with in-memory data):', err.message);
 });
 
 module.exports = app;
