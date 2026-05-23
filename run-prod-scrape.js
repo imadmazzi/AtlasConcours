@@ -232,12 +232,31 @@ async function configureMongoConnection() {
   process.env.MONGODB_URI = applyLocalTlsBypass(sanitizedUri);
 }
 
+async function wipeExistingListings(db) {
+  const concoursCount = Array.isArray(db.data.concours) ? db.data.concours.length : 0;
+  const jobsCount = Array.isArray(db.data.emplois) ? db.data.emplois.length : 0;
+
+  console.log('\n======================================================');
+  console.log('Clearing existing production listings before rescrape...');
+  console.log(`   - Concours to remove: ${concoursCount}`);
+  console.log(`   - Emplois to remove:  ${jobsCount}`);
+  console.log('======================================================\n');
+
+  db.data.concours = [];
+  db.data.emplois = [];
+  await db.save();
+  await db.flush();
+
+  console.log('Existing concours and emplois cleared from MongoDB Atlas.\n');
+}
+
 async function runProductionScraper() {
   await configureMongoConnection();
 
   const db = require('./server/db');
   const { runAnapecScraper, runJobScraper, runScraper } = require('./server/scraper');
   const force = process.argv.includes('--force');
+  const wipeExisting = process.argv.includes('--wipe-existing');
 
   console.log('\n======================================================');
   console.log('⚡ [Production Scraper Runner] Starting real database population...');
@@ -287,6 +306,10 @@ async function runProductionScraper() {
   console.log(`   - Concours: ${beforeConcours}`);
   console.log(`   - Emplois:  ${beforeJobs}\n`);
 
+  if (wipeExisting) {
+    await wipeExistingListings(db);
+  }
+
   console.log('🚀 Triggering scrapers sequentially...');
   try {
     // Run all scrapers with force=false to respect duplicate checks and keep database clean,
@@ -311,6 +334,8 @@ async function runProductionScraper() {
     console.error('\n❌ Scraper error occurred:', err.message);
   }
 
+  await db.flush();
+
   // Refresh counts
   const afterConcours = db.prepare("SELECT COUNT(*) as count FROM concours").get()?.count || 0;
   const afterJobs = db.prepare("SELECT COUNT(*) as count FROM emplois").get()?.count || 0;
@@ -318,8 +343,10 @@ async function runProductionScraper() {
   console.log('\n======================================================');
   console.log('📋 FINAL PRODUCTION SCRAPE REPORT');
   console.log('======================================================');
-  console.log(`   Concours: ${beforeConcours} ➔ ${afterConcours} (+${afterConcours - beforeConcours} new)`);
-  console.log(`   Emplois:  ${beforeJobs} ➔ ${afterJobs} (+${afterJobs - beforeJobs} new)`);
+  const reportStartConcours = wipeExisting ? 0 : beforeConcours;
+  const reportStartJobs = wipeExisting ? 0 : beforeJobs;
+  console.log(`   Concours: ${reportStartConcours} ➔ ${afterConcours} (+${afterConcours - reportStartConcours} new)`);
+  console.log(`   Emplois:  ${reportStartJobs} ➔ ${afterJobs} (+${afterJobs - reportStartJobs} new)`);
   console.log('======================================================\n');
   
   process.exit(0);
