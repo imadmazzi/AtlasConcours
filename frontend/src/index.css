@@ -661,9 +661,10 @@ footer {
 
 .detail-layout {
   display: grid;
-  grid-template-columns: 1fr 320px;
-  gap: 28px;
-  padding: 40px 0;
+  grid-template-columns: 1fr 340px;
+  gap: 32px;
+  padding: 0;
+  align-items: start;
 }
 
 .detail-main {
@@ -673,21 +674,69 @@ footer {
   padding: 32px;
 }
 
+/* Prose content styles – clean readable typography for injected HTML */
 .detail-content {
-  font-size: 16px;
-  line-height: 1.8;
+  font-size: 15.5px;
+  line-height: 1.85;
   color: var(--text);
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
-.detail-content h2, .detail-content h3 { margin: 24px 0 12px; color: var(--text); font-weight: 700; }
+.detail-content h1,
+.detail-content h2,
+.detail-content h3,
+.detail-content h4 {
+  margin: 28px 0 14px;
+  color: var(--text);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.detail-content h1 { font-size: 22px; }
+.detail-content h2 { font-size: 19px; }
+.detail-content h3 { font-size: 17px; }
+
 .detail-content p { margin-bottom: 16px; }
 .detail-content ul, .detail-content ol { margin: 12px 0 16px 24px; }
-.detail-content li { margin-bottom: 6px; }
+.detail-content li { margin-bottom: 8px; }
+
+.detail-content strong { color: var(--text); }
+
+.detail-content a {
+  color: var(--primary);
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.detail-content table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.detail-content th, .detail-content td {
+  border: 1px solid var(--border);
+  padding: 10px 14px;
+  text-align: left;
+}
+.detail-content th { background: #f8fafc; font-weight: 700; }
+
+/* Block out navigation noise from scraped HTML */
+.detail-content nav,
+.detail-content header,
+.detail-content footer,
+.detail-content .menu,
+.detail-content #menu,
+.detail-content script {
+  display: none !important;
+}
 
 .detail-sidebar {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  position: relative;
 }
 
 .sidebar-card {
@@ -964,9 +1013,87 @@ footer {
 
 /* ========== RESPONSIVE ========== */
 @media (max-width: 900px) {
-  .detail-layout { grid-template-columns: 1fr; }
+  .detail-layout {
+    grid-template-columns: 1fr;
+    /* Move sidebar before main on mobile for better UX */
+  }
+  .detail-sidebar {
+    order: -1;
+  }
   .footer-grid { grid-template-columns: 1fr 1fr; }
   .hero-stats { gap: 28px; }
+}
+
+/* ========== JOB DETAIL PAGE POLISHED STYLES ========== */
+.page-job-detail .page-header h1 {
+  font-size: clamp(22px, 4vw, 38px);
+}
+
+.page-job-detail .badge {
+  font-size: 12px;
+  padding: 6px 14px;
+}
+
+/* Summary card grid – key data points */
+.job-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+}
+
+.job-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.job-summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.job-summary-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* Sticky CTA card */
+.cta-card-sticky {
+  position: sticky;
+  top: 96px;
+  border-top: 4px solid var(--accent) !important;
+}
+
+.cta-card-sticky .btn-primary {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 12px;
+  letter-spacing: 0.2px;
+  transition: all 0.25s ease;
+}
+
+.cta-card-sticky .btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(26,86,219,0.35);
+}
+
+.cta-link-unavailable {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+  padding: 12px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 16px;
 }
 
 @media (max-width: 768px) {
@@ -1018,4 +1145,12 @@ footer {
   .cards-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .section-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+
+  .page-job-detail .page-header { padding: 36px 0 !important; }
+  .page-job-detail .page-header h1 { font-size: 24px !important; }
+  .page-job-detail .container { padding: 20px 16px 60px !important; }
+
+  .cta-card-sticky { position: relative !important; top: auto !important; }
+
+  .job-summary-grid { grid-template-columns: 1fr 1fr; }
 }
