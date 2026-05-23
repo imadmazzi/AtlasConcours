@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import DOMPurify from 'dompurify';
 import api from '../api';
 
 const BADGE_MAP = {
@@ -13,82 +12,6 @@ function formatDate(d) {
   if (!d || d === 'N/A') return 'Consulter l\'annonce';
   const date = new Date(d);
   return isNaN(date) ? String(d).trim() : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
-/**
- * Smart HTML extractor — finds the main content section of emploi-public pages,
- * strips nav/header/footer noise, and returns sanitized renderable HTML.
- */
-function extractCleanDescription(raw) {
-  if (!raw) return '<p>Aucune description disponible.</p>';
-
-  // If it's a full HTML page, parse and extract only the body content
-  const isFullPage = /<!DOCTYPE|<html/i.test(raw);
-
-  let content = raw;
-
-  if (isFullPage) {
-    try {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(raw, 'text/html');
-
-      // Try specific emploi-public content selectors first
-      const selectors = [
-        '.offres-details',
-        '.detail-offre',
-        '.job-detail',
-        '.offre-detail',
-        '.annonce-detail',
-        'article.detail',
-        '.content-detail',
-        '.main-content',
-        '[class*="detail"]',
-        'main',
-        '#main-content',
-      ];
-
-      let extracted = null;
-      for (const sel of selectors) {
-        const el = doc.querySelector(sel);
-        if (el && el.textContent.trim().length > 100) {
-          extracted = el;
-          break;
-        }
-      }
-
-      if (extracted) {
-        // Remove sub-navigation noise inside the extracted section
-        ['nav', 'header', 'footer', '.navbar', '.breadcrumb', '.pagination',
-         '.loader-d', '#accessPanel', '.rs_addtools', 'script', 'style', 'iframe'
-        ].forEach(s => extracted.querySelectorAll(s).forEach(n => n.remove()));
-        content = extracted.innerHTML;
-      } else {
-        // Fallback: use body but strip all obvious nav/chrome
-        ['nav', 'header', 'footer', '.navbar', '.sidebar', '.loader-d',
-         '#accessPanel', 'script', 'style', 'iframe', '.breadcrumb'
-        ].forEach(s => doc.querySelectorAll(s).forEach(n => n.remove()));
-        content = doc.body?.innerHTML || raw;
-      }
-    } catch (e) {
-      // DOMParser unavailable (SSR) — fall through to raw sanitization
-    }
-  }
-
-  // Sanitize but keep all structural tags needed for tables
-  return DOMPurify.sanitize(content, {
-    ALLOWED_TAGS: [
-      'h1','h2','h3','h4','h5','h6',
-      'p','br','hr',
-      'ul','ol','li',
-      'strong','b','em','i','u','mark','span',
-      'table','thead','tbody','tfoot','tr','th','td','caption','colgroup','col',
-      'div','section','article',
-      'img','figure','figcaption',
-      'a','blockquote','pre','code',
-    ],
-    ALLOWED_ATTR: ['href','target','rel','src','alt','width','height','class','style','colspan','rowspan','scope'],
-    ALLOW_DATA_ATTR: false,
-  });
 }
 
 /**
@@ -117,7 +40,6 @@ export default function ConcoursDetailPage() {
   const [concours, setConcours] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const contentRef = useRef(null);
 
   useEffect(() => {
     api.get('/concours/' + id).then(res => {
@@ -125,23 +47,6 @@ export default function ConcoursDetailPage() {
       setLoading(false);
     }).catch(() => { setError(true); setLoading(false); });
   }, [id]);
-
-  // After content renders, wrap all bare tables in a scroll container
-  useEffect(() => {
-    if (!contentRef.current) return;
-    contentRef.current.querySelectorAll('table').forEach(table => {
-      if (table.parentElement.classList.contains('table-scroll')) return;
-      const wrapper = document.createElement('div');
-      wrapper.className = 'table-scroll';
-      table.parentNode.insertBefore(wrapper, table);
-      wrapper.appendChild(table);
-    });
-    // Make all links in description open in new tab safely
-    contentRef.current.querySelectorAll('a').forEach(a => {
-      a.setAttribute('target', '_blank');
-      a.setAttribute('rel', 'noreferrer noopener');
-    });
-  }, [concours]);
 
   if (loading) return (
     <div className="loading" style={{ paddingTop: 80 }}>
@@ -157,7 +62,6 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
-  const cleanContent = extractCleanDescription(concours.description);
   const meta = extractMeta(concours.description);
 
   // Merge API fields with regex-extracted fallbacks
@@ -275,18 +179,68 @@ export default function ConcoursDetailPage() {
               </div>
             )}
 
-            {/* Main description card */}
+            {/* Structured Data View */}
             <div className="card concours-desc-card">
               <h2 className="card-section-title" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 28 }}>
-                <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Avis de concours officiel
+                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'offre
               </h2>
 
-              <div
-                ref={contentRef}
-                className="detail-content concours-prose"
-                dangerouslySetInnerHTML={{ __html: cleanContent }}
-              />
+              <div className="structured-data-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Organisme / Ministère</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{organisme || 'Non spécifié'}</div>
+                </div>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Poste / Type de Recrutement</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{concours.titre || 'Non spécifié'}</div>
+                </div>
+                {grade && (
+                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Grade / Échelle</div>
+                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{grade}</div>
+                  </div>
+                )}
+                {diplome && (
+                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Diplôme requis</div>
+                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{diplome}</div>
+                  </div>
+                )}
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Nombre de postes ouverts</div>
+                  <div style={{ flex: 1, color: 'var(--primary)', fontWeight: 800 }}>{postes || 'Non spécifié'}</div>
+                </div>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Date de publication</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{datePubli || 'Non spécifié'}</div>
+                </div>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Date limite de dépôt</div>
+                  <div style={{ flex: 1, color: 'var(--danger)', fontWeight: 800 }}>{formatDate(concours.date_limite)}</div>
+                </div>
+              </div>
+
+              {/* PDF Download CTA Section */}
+              <div style={{ marginTop: '40px', background: '#f8fafc', padding: '32px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                <div style={{ width: '56px', height: '56px', background: '#ef4444', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                  <i className="fa fa-file-pdf"></i>
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Avis de concours officiel</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
+                  Téléchargez le document officiel pour consulter les détails complets, les conditions d'accès et les modalités de candidature.
+                </p>
+                {concours.lien_source || concours.pdf_url ? (
+                  <a href={concours.pdf_url || concours.lien_source} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', fontSize: '16px', borderRadius: '12px', background: '#ef4444', border: 'none', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    <i className="fa fa-download" style={{ marginRight: '10px' }}></i>
+                    Télécharger l'avis de concours (PDF)
+                  </a>
+                ) : (
+                  <div className="cta-link-unavailable" style={{ display: 'inline-block' }}>
+                    <i className="fa fa-exclamation-circle"></i> Document non disponible
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
