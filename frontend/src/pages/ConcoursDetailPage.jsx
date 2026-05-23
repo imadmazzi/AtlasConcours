@@ -226,14 +226,14 @@ export default function ConcoursDetailPage() {
                 <div style={{ width: '56px', height: '56px', background: '#ef4444', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
                   <i className="fa fa-file-pdf"></i>
                 </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Avis de concours officiel</h3>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Arrêté du Concours Officiel</h3>
                 <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
                   Téléchargez le document officiel pour consulter les détails complets, les conditions d'accès et les modalités de candidature.
                 </p>
                 {concours.lien_source || concours.pdf_url ? (
                   <a href={concours.pdf_url || concours.lien_source} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', fontSize: '16px', borderRadius: '12px', background: '#ef4444', border: 'none', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                     <i className="fa fa-download" style={{ marginRight: '10px' }}></i>
-                    Télécharger l'avis de concours (PDF)
+                    Télécharger l'Arrêté du Concours (PDF)
                   </a>
                 ) : (
                   <div className="cta-link-unavailable" style={{ display: 'inline-block' }}>
