@@ -36,6 +36,25 @@ app.use('/api', async (req, res, next) => {
   }
 });
 
+app.get('/api/debug/wipe', async (req, res) => {
+  try {
+    if (db.storageMode === 'mongodb') {
+      await db.collection.deleteOne({ _id: 'main_db' });
+      db.data = {
+        concours: [],
+        emplois: [],
+        articles: [],
+        store: {}
+      };
+      await db.save();
+      return res.json({ success: true, message: "Wiped Vercel's MongoDB Atlas." });
+    }
+    res.json({ success: false, message: "Not in MongoDB mode." });
+  } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // Route Cron Vercel — runs scrapers sequentially and AWAITS completion before
 // sending the response.  On Vercel, once res.send() is called the function is
 // killed, so fire-and-forget promises never finish.  Running ONE source per
