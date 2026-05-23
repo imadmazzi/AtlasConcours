@@ -29,6 +29,15 @@ app.use('/api', async (req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   try {
     await dbReady;
+    
+    // CRITICAL: Bypass Vercel's warm RAM cache by syncing with MongoDB Atlas on every API request
+    if (db.storageMode === 'mongodb' && db.collection) {
+      const doc = await db.collection.findOne({ _id: 'main_db' });
+      if (doc && doc.data) {
+        db.data = doc.data;
+      }
+    }
+    
     next();
   } catch (err) {
     next(err);
