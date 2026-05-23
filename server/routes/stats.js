@@ -8,13 +8,7 @@ const authMiddleware = require('../middleware/auth');
 // any counts to avoid serving stale Vercel warm-container in-memory cache values.
 router.get('/', async (req, res) => {
   try {
-    // Force a fresh re-read from MongoDB Atlas before aggregating any stats
-    if (db.storageMode === 'mongodb' && db.collection) {
-      const doc = await db.collection.findOne({ _id: 'main_db' });
-      if (doc && doc.data) {
-        db.data = doc.data;
-      }
-    }
+    await db.syncFromAtlas(); // Always read fresh data from Atlas, bypass warm-container RAM cache
 
     const totalConcours = db.prepare('SELECT COUNT(*) as count FROM concours').get().count;
     const totalEmplois  = db.prepare('SELECT COUNT(*) as count FROM emplois').get().count;

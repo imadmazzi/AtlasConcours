@@ -5,7 +5,8 @@ const authMiddleware = require('../middleware/auth');
 const slugify = require('slugify');
 
 // GET /api/concours — Liste paginée avec filtres
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  await db.syncFromAtlas(); // Always read fresh data from Atlas, bypass warm-container RAM cache
   const { page = 1, limit = 12, categorie, search, sort = 'recent' } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -42,7 +43,8 @@ router.get('/similaires/:id', (req, res) => {
 });
 
 // GET /api/concours/:idOrSlug — Détail par ID ou slug
-router.get('/:idOrSlug', (req, res) => {
+router.get('/:idOrSlug', async (req, res) => {
+  await db.syncFromAtlas(); // Always read fresh data from Atlas
   const { idOrSlug } = req.params;
   let concours;
   

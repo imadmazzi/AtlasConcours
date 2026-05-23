@@ -535,7 +535,21 @@ const db = {
         return { changes: 0, lastInsertRowid: 0 };
       }
     };
-  }
+  },
+
+  /**
+   * Force a fresh read from MongoDB Atlas, overwriting the in-memory cache.
+   * Call this at the top of any route that must return real-time data.
+   * Safe to call in local/memory mode — it is a no-op when not connected to Atlas.
+   */
+  syncFromAtlas: async function() {
+    if (this.storageMode === 'mongodb' && this.collection) {
+      const doc = await this.collection.findOne({ _id: 'main_db' });
+      if (doc && doc.data) {
+        this.data = doc.data;
+      }
+    }
+  },
 };
 
 module.exports = db;

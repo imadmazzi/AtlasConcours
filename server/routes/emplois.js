@@ -4,7 +4,8 @@ const db = require('../db');
 const authMiddleware = require('../middleware/auth');
 
 // GET /api/emplois (et alias /api/jobs)
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
+  await db.syncFromAtlas(); // Always read fresh data from Atlas, bypass warm-container RAM cache
   const { page = 1, limit = 12, localisation, search, city, type, category } = req.query;
   const offset = (parseInt(page) - 1) * parseInt(limit);
 
@@ -36,7 +37,8 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/emplois/:id
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
+  await db.syncFromAtlas(); // Always read fresh data from Atlas
   const job = db.prepare('SELECT * FROM emplois WHERE id = ?').get(req.params.id);
   if (!job) return res.status(404).json({ error: 'Offre non trouvée.' });
   res.json(job);
