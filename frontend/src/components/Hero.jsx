@@ -6,7 +6,7 @@ import { T } from './T';
 export default function Hero() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
-  const [stats, setStats] = useState({ concours: 0, emplois: 0, articles: 0, views: '+50K' });
+  const [stats, setStats] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -65,19 +65,19 @@ export default function Hero() {
 
       <div className="hero-stats">
         <div className="stat-item">
-          <span className="stat-num">{stats.concours || 8}</span>
+          <span className="stat-num">{stats?.totaux?.concours ?? 0}</span>
           <span className="stat-label">Concours actifs</span>
         </div>
         <div className="stat-item">
-          <span className="stat-num">{stats.emplois || 6}</span>
+          <span className="stat-num">{stats?.totaux?.emplois ?? 0}</span>
           <span className="stat-label">Offres d'emploi</span>
         </div>
         <div className="stat-item">
-          <span className="stat-num">{stats.articles || 5}</span>
+          <span className="stat-num">{stats?.totaux?.articles ?? 0}</span>
           <span className="stat-label">Articles</span>
         </div>
         <div className="stat-item">
-          <span className="stat-num">+50K</span>
+          <span className="stat-num">{stats?.totaux?.vues ? `+${Math.floor(stats.totaux.vues/1000)}K` : '+0K'}</span>
           <span className="stat-label">Visiteurs/mois</span>
         </div>
       </div>
