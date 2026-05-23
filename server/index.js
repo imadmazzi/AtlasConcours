@@ -7,6 +7,7 @@ const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const mongodbVersion = require('mongodb/package.json').version;
 const dbReady = db.init().catch(err => {
   // Log but never crash the process — Vercel must stay alive to handle requests.
   console.error('⚠️ DB init warning (continuing with in-memory data):', err.message);
@@ -99,6 +100,10 @@ app.get('/api/health', (req, res) => {
     persistent: storageMode === 'mongodb',
     mongoConfigured,
     lastMongoError: db.lastMongoError,
+    runtime: {
+      node: process.version,
+      mongodb: mongodbVersion
+    },
     records: {
       concours: db.data.concours?.length || 0,
       emplois: db.data.emplois?.length || 0,
