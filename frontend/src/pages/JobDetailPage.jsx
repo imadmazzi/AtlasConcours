@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import DOMPurify from 'dompurify';
 import api from '../api';
 
 function formatDate(d) {
@@ -9,43 +8,7 @@ function formatDate(d) {
   return isNaN(date) ? d : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-function cleanJobHTML(rawHtml, aiContent) {
-  if (aiContent && aiContent.trim() !== '') {
-    // If AI rewritten content is present, prioritize it. Sanitize just in case.
-    return DOMPurify.sanitize(aiContent);
-  }
-
-  if (!rawHtml) return '<p>Aucune description disponible.</p>';
-
-  // Clean basic noise via regex
-  let cleaned = rawHtml;
-  cleaned = cleaned.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-  cleaned = cleaned.replace(/Get Adobe Flash player/gi, '');
-  cleaned = cleaned.replace(/Adobe Flash/gi, '');
-
-  try {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(cleaned, 'text/html');
-    
-    // Remove typical noise tags if they slipped in from ANAPEC/Emploi-public
-    const noisySelectors = [
-      'nav', 'header', 'footer', '.menu', '#menu', '.navigation',
-      'a[href*="home"]', 'a[href*="contact"]', 'iframe'
-    ];
-    noisySelectors.forEach(selector => {
-      doc.querySelectorAll(selector).forEach(el => el.remove());
-    });
-
-    cleaned = doc.body.innerHTML;
-  } catch (e) {
-    console.error("DOMParser error", e);
-  }
-
-  return DOMPurify.sanitize(cleaned, {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'span', 'table', 'thead', 'tbody', 'tr', 'td', 'th'],
-    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style']
-  });
-}
+// cleanJobHTML removed as we no longer render raw HTML
 
 function extractJobData(html) {
   if (!html) return {};
@@ -89,7 +52,7 @@ export default function JobDetailPage() {
     </div>
   );
 
-  const safeContent = cleanJobHTML(job.description, job.ai_rewritten);
+  // DOMPurify removed
   const extracted = extractJobData(job.description);
 
   return (
@@ -178,16 +141,64 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* FULL DESCRIPTION */}
-            <div className="card" style={{ padding: '40px 30px' }}>
-              <h2 style={{ fontSize: '22px', marginBottom: '24px', borderBottom: '1px solid var(--border)', paddingBottom: '16px' }}>
-                Description du poste
+            {/* Structured Data View */}
+            <div className="card concours-desc-card">
+              <h2 className="card-section-title" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 28 }}>
+                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'offre
               </h2>
-              <div
-                className="detail-content"
-                style={{ fontSize: '16px', lineHeight: '1.9', color: 'var(--text)' }}
-                dangerouslySetInnerHTML={{ __html: safeContent }}
-              />
+
+              <div className="structured-data-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Entreprise / Administration</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.entreprise || job.organisme || 'Non spécifié'}</div>
+                </div>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Nom du Poste</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.titre || 'Non spécifié'}</div>
+                </div>
+                {extracted.contrat && (
+                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Type de contrat</div>
+                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{extracted.contrat}</div>
+                  </div>
+                )}
+                {extracted.formation && (
+                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Formation requise</div>
+                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{extracted.formation}</div>
+                  </div>
+                )}
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Localisation</div>
+                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.localisation || job.ville || 'Maroc'}</div>
+                </div>
+                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
+                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Délai de dépôt</div>
+                  <div style={{ flex: 1, color: 'var(--danger)', fontWeight: 800 }}>{formatDate(job.date_limite || job.deadline)}</div>
+                </div>
+              </div>
+
+              {/* PDF / Apply Download CTA Section */}
+              <div style={{ marginTop: '40px', background: '#f8fafc', padding: '32px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                <div style={{ width: '56px', height: '56px', background: '#ef4444', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
+                  <i className="fa fa-file-pdf"></i>
+                </div>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Avis de l'offre officiel</h3>
+                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
+                  Téléchargez le document officiel ou consultez la page d'origine pour les détails complets et les modalités de candidature.
+                </p>
+                {job.lien_candidature || job.lien || job.pdf_url ? (
+                  <a href={job.pdf_url || job.lien_candidature || job.lien} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', fontSize: '16px', borderRadius: '12px', background: '#ef4444', border: 'none', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+                    <i className="fa fa-download" style={{ marginRight: '10px' }}></i>
+                    Télécharger l'Arrêté du Concours (PDF)
+                  </a>
+                ) : (
+                  <div className="cta-link-unavailable" style={{ display: 'inline-block' }}>
+                    <i className="fa fa-exclamation-circle"></i> Document non disponible
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -304,6 +304,44 @@ function insertItemNow(item, type) {
 }
 
 /**
+ * Extract strictly the description and strip out any noisy layout strings
+ */
+function extractCleanHtml($) {
+  // Target only specific detail containers first, not the whole body
+  let el = $('.offres-details').length ? $('.offres-details') 
+         : $('.detail-offre').length ? $('.detail-offre')
+         : $('.bloc_offre_home').length ? $('.bloc_offre_home')
+         : $('.detail-content').length ? $('.detail-content')
+         : $('.card-body').length ? $('.card-body')
+         : $('article.detail').length ? $('article.detail')
+         : $('.detail-annonce').length ? $('.detail-annonce')
+         : null;
+         
+  if (!el) {
+    // Fallback if no container matched, but strip all known layout noise first
+    ['nav', 'header', 'footer', '.navbar', '.sidebar', '.loader-d',
+     '#accessPanel', '.rs_addtools', 'script', 'style', 'iframe', '.breadcrumb',
+     '.pagination', 'form', 'input', 'button', '.login'
+    ].forEach(s => $(s).remove());
+    el = $('body');
+  } else {
+    // Even within the container, strip internal noise
+    ['nav', 'header', 'footer', '.navbar', '.breadcrumb', '.pagination',
+     '.loader-d', '#accessPanel', '.rs_addtools', 'script', 'style', 'iframe',
+     'form', 'input', 'button', '.login'
+    ].forEach(s => el.find(s).remove());
+  }
+
+  let html = el.html() || '';
+  if (!html.trim()) return "Détails non disponibles.";
+
+  // Strip accessibility injected strings that ruin layout
+  html = html.replace(/front_office\.accessibilite[a-zA-Z0-9_]*/gi, '');
+  
+  return html.trim();
+}
+
+/**
  * Pipeline de traitement — insère chaque item immédiatement après rewrite.
  */
 async function processPipeline(items, type) {
@@ -318,8 +356,7 @@ async function processPipeline(items, type) {
     try {
       const res = await fetchWithRetry(item.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent });
       const $ = cheerio.load(res.data);
-      const description = $('.bloc_offre_home').html() || $('.detail-content').html() || $('.card-body').html() || $.html() || "Détails non disponibles.";
-      item.description = description.trim();
+      item.description = extractCleanHtml($);
     } catch (err) {
       item.description = "Détails non disponibles.";
     }
@@ -332,8 +369,7 @@ async function processPipeline(items, type) {
       try {
         const res = await fetchWithRetry(next.url, { headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent });
         const $ = cheerio.load(res.data);
-        const description = $('.bloc_offre_home').html() || $('.detail-content').html() || $('.card-body').html() || $.html() || "Détails non disponibles.";
-        next.description = description.trim();
+        next.description = extractCleanHtml($);
       } catch (err) {
         next.description = "Détails non disponibles.";
       }
