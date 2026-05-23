@@ -65,6 +65,26 @@ function parseTxtOptions(answer) {
   return (answer.data || '').replace(/^"|"$/g, '').replace(/"\s+"/g, '').trim();
 }
 
+function withMongoParams(uri, entries) {
+  const [base, query = ''] = uri.split('?');
+  const params = new URLSearchParams(query);
+
+  for (const [key, value] of Object.entries(entries)) {
+    params.set(key, value);
+  }
+
+  return `${base}?${params.toString()}`;
+}
+
+function applyMongoTlsCompatibility(uri) {
+  if (process.env.MONGODB_TLS_COMPAT === 'false') return uri;
+
+  return withMongoParams(uri, {
+    tls: 'true',
+    tlsInsecure: 'true',
+  });
+}
+
 async function expandMongoSrvUri(uri) {
   const parsed = new URL(uri);
   const hostname = parsed.hostname;
@@ -109,7 +129,11 @@ async function configureMongoUri() {
   if (_mongoUriConfigured || !mongoUri) return;
   _mongoUriConfigured = true;
 
-  if (!mongoUri.startsWith('mongodb+srv://')) return;
+  if (!mongoUri.startsWith('mongodb+srv://')) {
+    mongoUri = applyMongoTlsCompatibility(mongoUri);
+    process.env.MONGODB_URI = mongoUri;
+    return;
+  }
 
   const dnsServers = (process.env.MONGODB_DNS_SERVERS || '1.1.1.1,8.8.8.8')
     .split(',')
@@ -129,6 +153,9 @@ async function configureMongoUri() {
   } catch (err) {
     console.warn(`MongoDB SRV expansion skipped: ${err.message}`);
   }
+
+  mongoUri = applyMongoTlsCompatibility(mongoUri);
+  process.env.MONGODB_URI = mongoUri;
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -205,6 +232,7 @@ const db = {
   data: JSON.parse(JSON.stringify(defaultData)),   // safe deep-clone of defaults
   storageMode: 'memory',                           // 'mongodb' | 'local' | 'memory'
   pendingSave: null,
+  lastMongoError: null,
 
   init: async function() {
     if (mongoUri) {
@@ -214,6 +242,7 @@ const db = {
         if (doc && doc.data) {
           this.data = doc.data;
           this.storageMode = 'mongodb';
+          this.lastMongoError = null;
           console.log('✅ Loaded data from MongoDB Atlas!');
         } else {
           // First-ever run — seed the database with default data + admin user
@@ -230,6 +259,7 @@ const db = {
           await this.collection.insertOne({ _id: 'main_db', data: initData });
           this.data = initData;
           this.storageMode = 'mongodb';
+          this.lastMongoError = null;
           console.log('✅ Seeded MongoDB Atlas with default data and admin user.');
         }
       } catch (err) {
@@ -237,6 +267,11 @@ const db = {
         console.error('❌ MongoDB Atlas INIT FAILED — falling back to local/memory.');
         console.error('MONGODB_CONNECTION_ERROR:', err.message, err.stack);
         console.error('Error code:', err.code || err.codeName || 'N/A');
+        this.lastMongoError = {
+          message: err.message,
+          name: err.name,
+          code: err.code || err.codeName || null
+        };
         if (err.message && err.message.includes('Authentication failed')) {
           console.error('💡 HINT: Check your MONGODB_URI username/password in Vercel env vars.');
         } else if (err.message && (err.message.includes('ETIMEDOUT') || err.message.includes('connect ECONNREFUSED') || err.message.includes('Server selection timed out') || err.message.includes('tlsv1 alert internal error'))) {

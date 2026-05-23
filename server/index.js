@@ -98,6 +98,7 @@ app.get('/api/health', (req, res) => {
     storageMode,
     persistent: storageMode === 'mongodb',
     mongoConfigured,
+    lastMongoError: db.lastMongoError,
     records: {
       concours: db.data.concours?.length || 0,
       emplois: db.data.emplois?.length || 0,
