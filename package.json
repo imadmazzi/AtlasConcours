@@ -4,7 +4,7 @@
   "description": "Plateforme marocaine de concours publics, offres d'emploi et articles de blog",
   "main": "server/index.js",
   "engines": {
-    "node": ">=20.19.0"
+    "node": "22.x"
   },
   "scripts": {
     "start": "node server/index.js",
