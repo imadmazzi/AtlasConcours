@@ -496,11 +496,13 @@ async function runAnapecScraper(force = false) {
         return;
       }
       const tds = $(el).find('td');
+      const reference = tds.length > 1 ? tds.eq(1).text().trim() : '';      // e.g. "ET2305261125170"
+      const titre     = tds.length > 3 ? tds.eq(3).text().trim().replace(/\s+/g, ' ') : ''; // e.g. "Technicien automaticien"
       const enterprise = tds.length > 1 ? tds.eq(1).text().trim() || 'Administration' : 'Administration';
-      const location   = tds.length > 2 ? tds.eq(2).text().trim() || 'Maroc' : 'Maroc';
-      const title = linkEl.text().trim().replace(/\s+/g, ' ') || 'Offre d\'emploi';
+      const location   = tds.length > 6 ? tds.eq(6).text().trim() || 'Maroc' : (tds.length > 2 ? tds.eq(2).text().trim() || 'Maroc' : 'Maroc');
+      const title = titre || reference || "Offre d'emploi ANAPEC";
 
-      newItems.push({ title, url: link, enterprise, location });
+      newItems.push({ title, url: link, enterprise, location, reference });
     });
 
     let stats = { added: 0, errors: 0 };
