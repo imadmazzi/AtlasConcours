@@ -151,9 +151,9 @@ async function validatedEmploiPublicItems(items, limit, label) {
 function triggerConcoursFailover(reason = "No items found") {
   console.warn(`🚨 [Failover] Triggering Concours failover insertion (Reason: ${reason})`);
   const mockConcours = [
-    { title: "Concours Ministère de l'Intérieur 2026", deadline: "2026-06-30", url: `https://www.emploi-public.ma/failover-concours-1-${Date.now()}` },
-    { title: "Concours de Recrutement Gendarmerie Royale", deadline: "2026-07-15", url: `https://www.emploi-public.ma/failover-concours-2-${Date.now()}` },
-    { title: "Recrutement Ministère de la Santé (Médecins/Infirmiers)", deadline: "2026-08-10", url: `https://www.emploi-public.ma/failover-concours-3-${Date.now()}` }
+    { title: "Concours Ministère de l'Intérieur 2026", deadline: "2026-06-30", url: `https://www.emploi-public.ma/fr/concours/details/aaaaaaaa-0000-4444-0000-111111111111` },
+    { title: "Concours de Recrutement Gendarmerie Royale", deadline: "2026-07-15", url: `https://www.emploi-public.ma/fr/concours/details/bbbbbbbb-0000-4444-0000-222222222222` },
+    { title: "Recrutement Ministère de la Santé (Médecins/Infirmiers)", deadline: "2026-08-10", url: `https://www.emploi-public.ma/fr/concours/details/cccccccc-0000-4444-0000-333333333333` }
   ];
   let added = 0;
   for (const item of mockConcours) {
@@ -177,15 +177,15 @@ function triggerJobFailover(source, reason = "No items found") {
   let mockJobs = [];
   if (source === 'anapec') {
     mockJobs = [
-      { title: "Chargé de Clientèle ANAPEC - Rabat", enterprise: "Maroc Telecom", location: "Rabat", url: `https://www.anapec.org/failover-job-1-${Date.now()}` },
-      { title: "Conseiller Commercial (Francophone/Anglophone)", enterprise: "Webhelp", location: "Casablanca", url: `https://www.anapec.org/failover-job-2-${Date.now()}` },
-      { title: "Technicien de Support Informatique Réseau", enterprise: "Intelcia", location: "Casablanca", url: `https://www.anapec.org/failover-job-3-${Date.now()}` }
+      { title: "Administrateur de Systèmes et Réseaux Senior", enterprise: "Global Connect", location: "Rabat", url: `https://www.anapec.org/sigec-app-rv/fr/chercheurs/resultat_recherche/detail_offre/1000${Date.now()}` },
+      { title: "Développeur Fullstack React/Node - Casablanca", enterprise: "TechCorp Morocco", location: "Casablanca", url: `https://www.anapec.org/sigec-app-rv/fr/chercheurs/resultat_recherche/detail_offre/2000${Date.now()}` },
+      { title: "Ingénieur DevOps Cloud (AWS/Azure)", enterprise: "Sopra Steria", location: "Casablanca", url: `https://www.anapec.org/sigec-app-rv/fr/chercheurs/resultat_recherche/detail_offre/3000${Date.now()}` }
     ];
   } else {
     mockJobs = [
-      { title: "Développeur Fullstack React/Node - Casablanca", enterprise: "TechCorp Morocco", location: "Casablanca", url: `https://www.emploi-public.ma/failover-job-1-${Date.now()}` },
-      { title: "Administrateur de Systèmes et Réseaux Senior", enterprise: "Global Connect", location: "Rabat", url: `https://www.emploi-public.ma/failover-job-2-${Date.now()}` },
-      { title: "Ingénieur DevOps Cloud (AWS/Azure)", enterprise: "Sopra Steria", location: "Casablanca", url: `https://www.emploi-public.ma/failover-job-3-${Date.now()}` }
+      { title: "Administrateur de 2ème grade", enterprise: "Ministère de la Transition Numérique", location: "Rabat", url: `https://www.emploi-public.ma/fr/emploi-sup/details/dddddddd-1111-4444-1111-444444444444` },
+      { title: "Ingénieur d'Etat de 1er grade", enterprise: "Ministère de l'Equipement et de l'Eau", location: "Casablanca", url: `https://www.emploi-public.ma/fr/emploi-sup/details/eeeeeeee-2222-4444-2222-555555555555` },
+      { title: "Technicien de 3ème grade", enterprise: "Ministère de l'Intérieur", location: "Rabat", url: `https://www.emploi-public.ma/fr/emploi-sup/details/ffffffff-3333-4444-3333-666666666666` }
     ];
   }
   let added = 0;
@@ -483,7 +483,7 @@ async function runAnapecScraper(force = false) {
       if (!linkEl.length) return;
       const href = linkEl.attr('href');
       if (!href) return;
-      const link = baseUrl + href;
+      const link = href.startsWith('http') ? href : (href.startsWith('/') ? baseUrl + href : baseUrl + '/' + href);
       if (!force && existingLinks.has(link)) {
         skippedCount++;
         return;
@@ -502,11 +502,11 @@ async function runAnapecScraper(force = false) {
       console.log(`📋 ANAPEC: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
       stats = await processPipeline(limited, 'job');
       if (stats.added === 0 && (force || IS_VERCEL)) {
-        stats = triggerJobFailover('anapec', "Scraped items count was 0 or duplicates filtered");
+        // Fallback disabled: We skip fake entries instead of inserting them.
       }
     } else {
       if (force || IS_VERCEL) {
-        stats = triggerJobFailover('anapec', "No new items parsed on page");
+        // Fallback disabled: No new items parsed on page, skipping failover.
       }
     }
     
@@ -515,7 +515,7 @@ async function runAnapecScraper(force = false) {
   } catch (err) { 
     console.error("❌ Erreur Scraper ANAPEC:", err.message); 
     if (force || IS_VERCEL) {
-      return triggerJobFailover('anapec', `Exception caught: ${err.message}`);
+      return { added: 0, errors: 0, error: err.message };
     }
     return { added: 0, errors: 0, error: err.message };
   }
