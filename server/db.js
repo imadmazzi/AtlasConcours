@@ -121,7 +121,7 @@ const db = {
         console.error('Error code:', err.code || err.codeName || 'N/A');
         if (err.message && err.message.includes('Authentication failed')) {
           console.error('💡 HINT: Check your MONGODB_URI username/password in Vercel env vars.');
-        } else if (err.message && (err.message.includes('ETIMEDOUT') || err.message.includes('connect ECONNREFUSED') || err.message.includes('Server selection timed out'))) {
+        } else if (err.message && (err.message.includes('ETIMEDOUT') || err.message.includes('connect ECONNREFUSED') || err.message.includes('Server selection timed out') || err.message.includes('tlsv1 alert internal error'))) {
           console.error('💡 HINT: Your IP is likely NOT whitelisted in MongoDB Atlas.');
           console.error('   → Go to Atlas > Network Access > Add 0.0.0.0/0 to allow all IPs (required for Vercel).');
         } else if (err.message && err.message.includes('querySrv ENOTFOUND')) {
