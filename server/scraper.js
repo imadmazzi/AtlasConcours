@@ -17,6 +17,72 @@ const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
 const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
 const BATCH_DELAY    = IS_VERCEL ? 0   : 2000; // inter-batch sleep (ms)
 const REWRITE_BATCH  = IS_VERCEL ? 1   : 3;    // items per AI rewrite call
+const EMPLOI_PUBLIC_BASE = "https://www.emploi-public.ma";
+const EMPLOI_PUBLIC_UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+const EMPLOI_PUBLIC_KIND_RE = /\/(fr|ar)\/(concours|emploi-sup)\/details\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+
+function normalizeEmploiPublicUrl(rawHref, expectedKind, preferredLang = 'fr') {
+  if (!rawHref) return null;
+
+  const expectedKinds = {
+    concours: 'concours',
+    job: 'emploi-sup',
+    'emploi-sup': 'emploi-sup',
+  };
+  const canonicalExpectedKind = expectedKinds[expectedKind] || expectedKind;
+  const raw = String(rawHref)
+    .trim()
+    .replace(/&amp;/g, '&')
+    .replace(/^['"]|['"]$/g, '');
+
+  const uuidMatch = raw.match(EMPLOI_PUBLIC_UUID_RE);
+  if (!uuidMatch) return null;
+
+  let lang = ['fr', 'ar'].includes(preferredLang) ? preferredLang : 'fr';
+  let kind = canonicalExpectedKind;
+  const routeMatch = raw.match(EMPLOI_PUBLIC_KIND_RE);
+
+  if (routeMatch) {
+    lang = routeMatch[1].toLowerCase();
+    kind = routeMatch[2].toLowerCase();
+  } else {
+    const officialUrlMatch = raw.match(/https?:\/\/(?:www\.)?emploi-public\.ma\/[^\s'"<>\\)]+/i);
+    const rawUrl = officialUrlMatch ? officialUrlMatch[0] : raw;
+
+    try {
+      const parsed = new URL(rawUrl, EMPLOI_PUBLIC_BASE);
+      const parsedRoute = parsed.pathname.match(EMPLOI_PUBLIC_KIND_RE);
+      if (parsedRoute) {
+        lang = parsedRoute[1].toLowerCase();
+        kind = parsedRoute[2].toLowerCase();
+      }
+    } catch (_) {
+      // Keep the UUID-based fallback below for JavaScript handlers or malformed hrefs.
+    }
+  }
+
+  if (canonicalExpectedKind && kind !== canonicalExpectedKind) return null;
+
+  return `${EMPLOI_PUBLIC_BASE}/${lang}/${kind}/details/${uuidMatch[0].toLowerCase()}`;
+}
+
+function getEmploiPublicCardUrl($, el, expectedKind) {
+  const linkEl = $(el);
+  const candidates = [
+    linkEl.attr('href'),
+    linkEl.attr('data-href'),
+    linkEl.attr('data-url'),
+    linkEl.attr('data-link'),
+    linkEl.attr('onclick'),
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeEmploiPublicUrl(candidate, expectedKind);
+    if (normalized) return normalized;
+  }
+
+  return null;
+}
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -247,17 +313,16 @@ async function processPipeline(items, type) {
 
 async function runScraper(force = false) {
   console.log("🚀 Scraper Concours (Optimisé)...");
-  const baseUrl = "https://www.emploi-public.ma";
+  const baseUrl = EMPLOI_PUBLIC_BASE;
   try {
     const res = await fetchWithRetry(`${baseUrl}/fr/concours-liste`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     const $ = cheerio.load(res.data);
-    const existingLinks = new Set(db.data.concours.map(c => c.lien_source));
+    const existingLinks = new Set(db.data.concours.map(c => normalizeEmploiPublicUrl(c.lien_source, 'concours') || c.lien_source));
     
     const newItems = [];
     $('a.card.card-scale').each((i, el) => {
-      const href = $(el).attr('href');
-      if (!href) return;
-      const link = baseUrl + href;
+      const link = getEmploiPublicCardUrl($, el, 'concours');
+      if (!link) return;
       if (!force && existingLinks.has(link)) return;
 
       const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
@@ -294,17 +359,16 @@ async function runScraper(force = false) {
 
 async function runJobScraper(force = false) {
   console.log("🚀 Scraper Emplois (Optimisé)...");
-  const baseUrl = "https://www.emploi-public.ma";
+  const baseUrl = EMPLOI_PUBLIC_BASE;
   try {
     const res = await fetchWithRetry(`${baseUrl}/fr/emploi-sup-liste`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
     const $ = cheerio.load(res.data);
-    const existingLinks = new Set(db.data.emplois.map(e => e.lien_candidature));
+    const existingLinks = new Set(db.data.emplois.map(e => normalizeEmploiPublicUrl(e.lien_candidature, 'job') || e.lien_candidature));
     
     const newItems = [];
     $('a.card.card-scale').each((i, el) => {
-      const href = $(el).attr('href');
-      if (!href) return;
-      const link = baseUrl + href;
+      const link = getEmploiPublicCardUrl($, el, 'job');
+      if (!link) return;
       if (!force && existingLinks.has(link)) return;
       newItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
     });
@@ -389,4 +453,4 @@ async function runAnapecScraper(force = false) {
   }
 }
 
-module.exports = { runScraper, runJobScraper, runAnapecScraper };
+module.exports = { runScraper, runJobScraper, runAnapecScraper, normalizeEmploiPublicUrl };
