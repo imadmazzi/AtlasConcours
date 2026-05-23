@@ -484,13 +484,12 @@ async function runAnapecScraper(force = false) {
       const href = linkEl.attr('href') || '';
       if (!href) return;
 
-      // The nyroModal href leads to an employer-internal page (/bloc_offre_home/ID/...).
-      // We must extract the numeric job ID and build the correct PUBLIC candidate URL:
-      // https://www.anapec.org/sigec-app-rv/fr/chercheurs/resultat_recherche/detail_offre/{ID}
+      // The nyroModal href leads to the only working direct link that bypasses the PHP session check.
+      // The old /chercheurs/resultat_recherche/detail_offre/ URL redirects external visitors.
       const idMatch = href.match(/\/(\d{5,})\//);
       if (!idMatch) return; // skip rows with no valid job ID
       const jobId = idMatch[1];
-      const link = `${baseUrl}/sigec-app-rv/fr/chercheurs/resultat_recherche/detail_offre/${jobId}`;
+      const link = `${baseUrl}/sigec-app-rv/fr/entreprises/bloc_offre_home/${jobId}/resultat_recherche`;
 
       if (!force && existingLinks.has(link)) {
         skippedCount++;
