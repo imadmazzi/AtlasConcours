@@ -16,10 +16,16 @@
   "routes": [
     {
       "src": "/api/cron-scraper",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      },
       "dest": "server/index.js"
     },
     {
       "src": "/api/(.*)",
+      "headers": {
+        "Cache-Control": "public, max-age=0, must-revalidate"
+      },
       "dest": "server/index.js"
     },
     {
