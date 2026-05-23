@@ -90,19 +90,21 @@ async function fetchWithRetry(url, options = {}, retries = RETRY_COUNT) {
   }
 }
 
+let aiQuotaExceeded = false;
+
 /**
  * Réécrit un lot d'éléments via IA (Batch processing)
  */
 async function rewriteBatch(items, type = "concours") {
-  if (!process.env.GEMINI_API_KEY || items.length === 0) {
+  if (aiQuotaExceeded || !process.env.GEMINI_API_KEY || items.length === 0) {
     return items.map(item => ({
       ...item,
       rewritten: {
         title: item.title + " (Nouveau)",
         description: item.description,
         summary: item.title + " est disponible.",
-        enterprise: "Administration",
-        location: "Maroc"
+        enterprise: item.enterprise || "Administration",
+        location: item.location || "Maroc"
       }
     }));
   }
@@ -140,6 +142,10 @@ async function rewriteBatch(items, type = "concours") {
     }));
   } catch (error) {
     console.error("❌ Erreur Batch IA:", error.message);
+    if (error.message && (error.message.includes('429') || error.message.toLowerCase().includes('quota'))) {
+      console.warn("⚠️ Gemini API Quota Exceeded (429). Disabling AI rewrites for this run and falling back to raw data instantly.");
+      aiQuotaExceeded = true;
+    }
     return items.map(item => ({ ...item, rewritten: null }));
   }
 }
