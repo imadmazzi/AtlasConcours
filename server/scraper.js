@@ -83,6 +83,66 @@ function getEmploiPublicCardUrl($, el, expectedKind) {
 
   return null;
 }
+
+function isEmploiPublic404Page(html) {
+  const body = String(html || '');
+  return /\b404\b|Erreur\s*404|Page\s+introuvable|not\s+found/i.test(body);
+}
+
+function isEmploiPublicDetailPage(html) {
+  const body = String(html || '');
+  return /tail de l'annonce|Description/i.test(body);
+}
+
+async function validateEmploiPublicUrl(url) {
+  try {
+    const res = await axios.get(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0' },
+      httpsAgent,
+      maxRedirects: 5,
+      timeout: Math.min(FETCH_TIMEOUT, IS_VERCEL ? 3500 : 8000),
+      validateStatus: () => true,
+    });
+
+    const finalUrl = res.request?.res?.responseUrl || url;
+    if (res.status === 404 || res.status >= 500) {
+      return { ok: false, reason: `HTTP ${res.status}` };
+    }
+    if (!finalUrl.includes('/details/')) {
+      return { ok: false, reason: `redirected to ${finalUrl}` };
+    }
+    if (!isEmploiPublicDetailPage(res.data)) {
+      return { ok: false, reason: 'missing detail page markers' };
+    }
+    if (isEmploiPublic404Page(res.data)) {
+      return { ok: false, reason: 'official 404 page' };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, reason: err.message };
+  }
+}
+
+async function validatedEmploiPublicItems(items, limit, label) {
+  const valid = [];
+  let skipped = 0;
+
+  for (const item of items) {
+    if (valid.length >= limit) break;
+
+    const check = await validateEmploiPublicUrl(item.url);
+    if (!check.ok) {
+      skipped++;
+      console.warn(`  ⚠️ Skipping dead Emploi-Public ${label}: ${item.url} (${check.reason})`);
+      continue;
+    }
+
+    valid.push(item);
+  }
+
+  return { valid, skipped };
+}
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -335,23 +395,27 @@ async function runScraper(force = false) {
     });
 
     if (newItems.length > 0) {
-      const limited = newItems.slice(0, ITEM_LIMIT);
+      const { valid: limited, skipped } = await validatedEmploiPublicItems(newItems, ITEM_LIMIT, 'concours');
       console.log(`📋 Concours: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      console.log(`Emploi-Public concours validation: ${skipped} dead skipped, ${limited.length} live kept.`);
+      if (limited.length === 0) {
+        return { added: 0, errors: 0, skipped, reason: 'No live Emploi-Public concours detail URLs' };
+      }
       const stats = await processPipeline(limited, 'concours');
       if (stats.added === 0 && (force || IS_VERCEL)) {
-        return triggerConcoursFailover("Scraped items count was 0 or duplicates filtered");
+        return { ...stats, skipped, reason: "No live Emploi-Public concours inserted" };
       }
-      return stats;
+      return { ...stats, skipped };
     }
     
     if (force || IS_VERCEL) {
-      return triggerConcoursFailover("No new items parsed on page");
+      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public concours parsed on page" };
     }
     return { added: 0, errors: 0 };
   } catch (err) { 
     console.error("❌ Erreur Scraper Concours:", err.message); 
     if (force || IS_VERCEL) {
-      return triggerConcoursFailover(`Exception caught: ${err.message}`);
+        return { added: 0, errors: 0, error: err.message };
     }
     return { added: 0, errors: 0, error: err.message }; 
   }
@@ -374,23 +438,27 @@ async function runJobScraper(force = false) {
     });
 
     if (newItems.length > 0) {
-      const limited = newItems.slice(0, ITEM_LIMIT);
+      const { valid: limited, skipped } = await validatedEmploiPublicItems(newItems, ITEM_LIMIT, 'job');
       console.log(`📋 Emplois: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      console.log(`Emploi-Public job validation: ${skipped} dead skipped, ${limited.length} live kept.`);
+      if (limited.length === 0) {
+        return { added: 0, errors: 0, skipped, reason: 'No live Emploi-Public job detail URLs' };
+      }
       const stats = await processPipeline(limited, 'job');
       if (stats.added === 0 && (force || IS_VERCEL)) {
-        return triggerJobFailover('job_scraper', "Scraped items count was 0 or duplicates filtered");
+        return { ...stats, skipped, reason: "No live Emploi-Public jobs inserted" };
       }
-      return stats;
+      return { ...stats, skipped };
     }
     
     if (force || IS_VERCEL) {
-      return triggerJobFailover('job_scraper', "No new items parsed on page");
+      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public jobs parsed on page" };
     }
     return { added: 0, errors: 0 };
   } catch (err) { 
     console.error("❌ Erreur Scraper Emplois:", err.message); 
     if (force || IS_VERCEL) {
-      return triggerJobFailover('job_scraper', `Exception caught: ${err.message}`);
+      return { added: 0, errors: 0, error: err.message };
     }
     return { added: 0, errors: 0, error: err.message }; 
   }
@@ -453,4 +521,4 @@ async function runAnapecScraper(force = false) {
   }
 }
 
-module.exports = { runScraper, runJobScraper, runAnapecScraper, normalizeEmploiPublicUrl };
+module.exports = { runScraper, runJobScraper, runAnapecScraper, normalizeEmploiPublicUrl, validateEmploiPublicUrl };
