@@ -119,6 +119,7 @@ function applyLocalTlsBypass(uri) {
   return withMongoParams(uri, {
     tls: 'true',
     tlsInsecure: 'true',
+    retryWrites: 'true',
   });
 }
 

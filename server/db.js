@@ -212,9 +212,12 @@ async function getMongoCollection() {
   const { MongoClient } = require('mongodb');
   const options = {
     maxPoolSize: 5,           // keep pool small for serverless
+    minPoolSize: 0,
+    maxIdleTimeMS: 30000,
     serverSelectionTimeoutMS: 8000,
     connectTimeoutMS: 8000,
     socketTimeoutMS: 10000,
+    tls: true,
   };
 
   let lastConnectionError = null;
