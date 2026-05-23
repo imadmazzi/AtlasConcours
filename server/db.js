@@ -16,6 +16,8 @@ if (mongoUri) {
     console.warn(`⚠️  MONGODB_URI was sanitized: removed ${rawLength - mongoUri.length} hidden char(s) (spaces/quotes/newlines).`);
   }
 }
+let originalMongoUri = mongoUri;
+let expandedMongoUri = null;
 
 let _mongoUriConfigured = false;
 
@@ -147,7 +149,8 @@ async function configureMongoUri() {
   if (process.env.MONGODB_EXPAND_SRV === 'false') return;
 
   try {
-    mongoUri = await expandMongoSrvUri(mongoUri);
+    expandedMongoUri = await expandMongoSrvUri(mongoUri);
+    mongoUri = expandedMongoUri;
     process.env.MONGODB_URI = mongoUri;
     console.log('Expanded MongoDB SRV URI through DNS-over-HTTPS.');
   } catch (err) {
@@ -156,6 +159,23 @@ async function configureMongoUri() {
 
   mongoUri = applyMongoTlsCompatibility(mongoUri);
   process.env.MONGODB_URI = mongoUri;
+}
+
+function getMongoUriCandidates() {
+  return [
+    originalMongoUri,
+    originalMongoUri && applyMongoTlsCompatibility(originalMongoUri),
+    expandedMongoUri,
+    expandedMongoUri && applyMongoTlsCompatibility(expandedMongoUri),
+    mongoUri,
+    mongoUri && applyMongoTlsCompatibility(mongoUri),
+  ].filter((uri, index, list) => uri && list.indexOf(uri) === index);
+}
+
+function redactMongoUri(uri) {
+  return uri
+    ? uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')
+    : '(undefined)';
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -189,25 +209,37 @@ async function getMongoCollection() {
   if (_cachedCollection) return _cachedCollection;          // reuse warm connection
 
   await configureMongoUri();
-  const uri = mongoUri;
-
-  // Log a sanitized version of the URI so we can verify the right var is being read
-  // without leaking credentials into Vercel logs.
-  const sanitized = uri
-    ? uri.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@')
-    : '(undefined)';
-  console.log('🔑 MONGODB_URI detected:', sanitized);
-
   const { MongoClient } = require('mongodb');
-  _cachedClient = new MongoClient(uri, {
+  const options = {
     maxPoolSize: 5,           // keep pool small for serverless
     serverSelectionTimeoutMS: 8000,
     connectTimeoutMS: 8000,
     socketTimeoutMS: 10000,
-  });
+  };
 
+  let lastConnectionError = null;
   try {
-    await _cachedClient.connect();
+    for (const candidateUri of getMongoUriCandidates()) {
+      console.log('🔑 Trying MONGODB_URI:', redactMongoUri(candidateUri));
+      const client = new MongoClient(candidateUri, options);
+
+      try {
+        await client.connect();
+        _cachedClient = client;
+        mongoUri = candidateUri;
+        process.env.MONGODB_URI = candidateUri;
+        lastConnectionError = null;
+        break;
+      } catch (candidateErr) {
+        lastConnectionError = candidateErr;
+        await client.close().catch(() => {});
+        console.error('MongoDB candidate failed:', candidateErr.message);
+      }
+    }
+
+    if (!_cachedClient) {
+      throw lastConnectionError || new Error('No MongoDB URI candidates were available.');
+    }
   } catch (connErr) {
     // ── CRITICAL: Surface the EXACT reason MongoDB failed ──────────────
     console.error('══════════════════════════════════════════════════════════');
