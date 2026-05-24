@@ -16,7 +16,8 @@
     "build:unix": "cd frontend && npm install && npm run build && cp -r dist/* ../dist/",
     "seed": "node server/seed.js",
     "test-scrape": "node server/test-scrape.js",
-    "scrape:prod": "node run-prod-scrape.js"
+    "scrape:prod": "node run-prod-scrape.js",
+    "scrape:push-local": "node server/push-local-scrape.js"
   },
   "keywords": [
     "concours",

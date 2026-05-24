@@ -38,6 +38,9 @@ app.use('/api', async (req, res, next) => {
 
 app.get('/api/debug/wipe', async (req, res) => {
   try {
+    if ((process.env.VERCEL || process.env.NODE_ENV === 'production') && !authorizePush(req)) {
+      return res.status(401).json({ error: 'Unauthorized debug operation.' });
+    }
     if (db.storageMode === 'mongodb') {
       await db.collection.deleteOne({ _id: 'main_db' });
       db.data = {
@@ -57,6 +60,9 @@ app.get('/api/debug/wipe', async (req, res) => {
 
 app.post('/api/debug/upload', async (req, res) => {
   try {
+    if ((process.env.VERCEL || process.env.NODE_ENV === 'production') && !authorizePush(req)) {
+      return res.status(401).json({ error: 'Unauthorized debug operation.' });
+    }
     if (db.storageMode === 'mongodb') {
       if (!req.body || !req.body.emplois) return res.status(400).json({error: "Invalid payload"});
       db.data = req.body;
@@ -65,6 +71,90 @@ app.post('/api/debug/upload', async (req, res) => {
     }
     res.json({ success: false, message: "Not in MongoDB mode." });
   } catch(e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+function getPushToken() {
+  return process.env.LOCAL_SCRAPE_PUSH_TOKEN || process.env.SCRAPE_PUSH_TOKEN || '';
+}
+
+function authorizePush(req) {
+  const configuredToken = getPushToken();
+  const authHeader = req.headers.authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const headerToken = req.headers['x-scrape-push-token'];
+
+  return !!configuredToken && (bearerToken === configuredToken || headerToken === configuredToken);
+}
+
+function normalizePushedListings(rows, type) {
+  const { sanitizeDescription } = require('./maintenance-sanitize-descriptions');
+
+  return rows.map((row, index) => {
+    if (type === 'concours') {
+      return {
+        id: Number(row.id) || index + 1,
+        titre: String(row.titre || row.title || 'Concours').trim(),
+        slug: String(row.slug || `concours-${Date.now()}-${index + 1}`).trim(),
+        description: sanitizeDescription(row.description || ''),
+        categorie: String(row.categorie || row.category || 'Concours').trim(),
+        date_limite: String(row.date_limite || row.deadline || '').trim(),
+        lien_source: String(row.lien_source || row.url || '').trim(),
+        vues: Number(row.vues) || 0,
+        created_at: row.created_at || new Date().toISOString(),
+      };
+    }
+
+    return {
+      id: Number(row.id) || index + 1,
+      titre: String(row.titre || row.title || 'Offre d’emploi').trim(),
+      entreprise: String(row.entreprise || row.enterprise || 'Administration').trim(),
+      localisation: String(row.localisation || row.location || 'Maroc').trim(),
+      description: sanitizeDescription(row.description || ''),
+      lien_candidature: String(row.lien_candidature || row.url || '').trim(),
+      created_at: row.created_at || new Date().toISOString(),
+    };
+  });
+}
+
+// Secure local scrape bridge. Use this when Moroccan government sites reject
+// cloud egress IPs: run the scraper on a domestic IP, then push sanitized rows.
+app.post('/api/admin/push-scrape', async (req, res) => {
+  try {
+    if (!authorizePush(req)) {
+      return res.status(401).json({ error: 'Unauthorized scrape push.' });
+    }
+    if (db.storageMode !== 'mongodb') {
+      return res.status(503).json({ error: `MongoDB persistence required. Active mode: ${db.storageMode}` });
+    }
+
+    const emplois = Array.isArray(req.body?.emplois) ? req.body.emplois : null;
+    const concours = Array.isArray(req.body?.concours) ? req.body.concours : null;
+    const allowEmpty = req.body?.allowEmpty === true;
+
+    if (!emplois && !concours) {
+      return res.status(400).json({ error: 'Payload must include emplois and/or concours arrays.' });
+    }
+    if (!allowEmpty && ((emplois && emplois.length === 0) || (concours && concours.length === 0))) {
+      return res.status(400).json({ error: 'Refusing to replace listings with an empty array unless allowEmpty=true.' });
+    }
+
+    if (emplois) db.data.emplois = normalizePushedListings(emplois, 'emplois');
+    if (concours) db.data.concours = normalizePushedListings(concours, 'concours');
+
+    await db.save();
+    await db.flush();
+
+    res.json({
+      success: true,
+      storageMode: db.storageMode,
+      records: {
+        emplois: db.data.emplois.length,
+        concours: db.data.concours.length,
+      },
+    });
+  } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });

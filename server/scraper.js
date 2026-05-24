@@ -20,6 +20,78 @@ const REWRITE_BATCH  = IS_VERCEL ? 1   : 3;    // items per AI rewrite call
 const EMPLOI_PUBLIC_BASE = "https://www.emploi-public.ma";
 const EMPLOI_PUBLIC_UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const EMPLOI_PUBLIC_KIND_RE = /\/(fr|ar)\/(concours|emploi-sup)\/details\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+const SCRAPER_PROXY_URL = process.env.SCRAPER_PROXY_URL || '';
+const SCRAPINGBEE_API_KEY = process.env.SCRAPINGBEE_API_KEY || '';
+const SCRAPINGBEE_COUNTRY_CODE = process.env.SCRAPINGBEE_COUNTRY_CODE || 'ma';
+const SCRAPINGBEE_PREMIUM_PROXY = process.env.SCRAPINGBEE_PREMIUM_PROXY !== 'false';
+
+function getStandardProxyConfig() {
+  if (!SCRAPER_PROXY_URL) return null;
+
+  try {
+    const parsed = new URL(SCRAPER_PROXY_URL);
+    return {
+      protocol: parsed.protocol.replace(':', ''),
+      host: parsed.hostname,
+      port: parsed.port ? Number(parsed.port) : (parsed.protocol === 'https:' ? 443 : 80),
+      auth: parsed.username ? {
+        username: decodeURIComponent(parsed.username),
+        password: decodeURIComponent(parsed.password || ''),
+      } : undefined,
+    };
+  } catch (err) {
+    console.warn(`Invalid SCRAPER_PROXY_URL ignored: ${err.message}`);
+    return null;
+  }
+}
+
+function buildScrapingBeeUrl(targetUrl) {
+  const apiUrl = new URL('https://app.scrapingbee.com/api/v1/');
+  apiUrl.searchParams.set('api_key', SCRAPINGBEE_API_KEY);
+  apiUrl.searchParams.set('url', targetUrl);
+  apiUrl.searchParams.set('render_js', 'false');
+  apiUrl.searchParams.set('block_resources', 'true');
+  apiUrl.searchParams.set('transparent_status_code', 'true');
+  apiUrl.searchParams.set('timeout', String(Math.max(FETCH_TIMEOUT, 20000)));
+
+  if (SCRAPINGBEE_PREMIUM_PROXY) {
+    apiUrl.searchParams.set('premium_proxy', 'true');
+    apiUrl.searchParams.set('country_code', SCRAPINGBEE_COUNTRY_CODE);
+  }
+
+  return apiUrl.toString();
+}
+
+function buildScraperRequest(url, options = {}) {
+  const config = {
+    ...options,
+    timeout: options.timeout || FETCH_TIMEOUT,
+  };
+
+  if (SCRAPINGBEE_API_KEY) {
+    return {
+      url: buildScrapingBeeUrl(url),
+      config: {
+        ...config,
+        proxy: false,
+        httpsAgent,
+      },
+      via: 'scrapingbee',
+    };
+  }
+
+  const proxy = getStandardProxyConfig();
+  if (proxy) {
+    config.proxy = proxy;
+  }
+
+  return { url, config, via: proxy ? 'proxy' : 'direct' };
+}
+
+async function scraperGet(url, options = {}) {
+  const request = buildScraperRequest(url, options);
+  return axios.get(request.url, request.config);
+}
 
 function normalizeEmploiPublicUrl(rawHref, expectedKind, preferredLang = 'fr') {
   if (!rawHref) return null;
@@ -96,7 +168,7 @@ function isEmploiPublicDetailPage(html) {
 
 async function validateEmploiPublicUrl(url) {
   try {
-    const res = await axios.get(url, {
+    const res = await scraperGet(url, {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       httpsAgent,
       maxRedirects: 5,
@@ -104,7 +176,7 @@ async function validateEmploiPublicUrl(url) {
       validateStatus: () => true,
     });
 
-    const finalUrl = res.request?.res?.responseUrl || url;
+    const finalUrl = SCRAPINGBEE_API_KEY ? url : (res.request?.res?.responseUrl || url);
     if (res.status === 404 || res.status >= 500) {
       return { ok: false, reason: `HTTP ${res.status}` };
     }
@@ -207,7 +279,7 @@ function triggerJobFailover(source, reason = "No items found") {
 async function fetchWithRetry(url, options = {}, retries = RETRY_COUNT) {
   for (let i = 0; i <= retries; i++) {
     try {
-      return await axios.get(url, { ...options, timeout: FETCH_TIMEOUT });
+      return await scraperGet(url, { ...options, timeout: FETCH_TIMEOUT });
     } catch (err) {
       if (i === retries) throw err;
       console.warn(`⚠️ Retrying (${i + 1}/${retries}) for ${url}...`);
