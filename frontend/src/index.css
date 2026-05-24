@@ -1368,3 +1368,156 @@ footer {
   .facts-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* =====================================================
+   MOBILE OVERFLOW FIX — Job & Concours Detail Pages
+   Prevents horizontal scroll caused by scraped content,
+   wide tables, fixed-width elements, and injected HTML.
+   Desktop layout is completely unaffected (min-width guard).
+   ===================================================== */
+@media (max-width: 768px) {
+
+  /* Root page wrapper: block any overflow leak */
+  .page-job-detail {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  /* Container: clamp to viewport, reset any excess padding */
+  .page-job-detail .container {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Detail layout column stacking already handled at 900px,
+     but make sure neither column can exceed viewport width */
+  .detail-layout {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .detail-main,
+  .detail-sidebar {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  /* Cards — the primary containers for scraped/structured content */
+  .card,
+  .concours-desc-card,
+  .concours-facts-card {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Structured data rows — label can no longer push past viewport */
+  .structured-data-list .data-row > div {
+    max-width: 100% !important;
+    width: auto !important;
+    box-sizing: border-box;
+    word-break: break-word;
+  }
+
+  /* ── Universal scraped-content containment ──
+     Forces every possibly-wide element rendered inside detail cards
+     to respect the mobile viewport. Covers dangerouslySetInnerHTML
+     output as well as statically rendered structured data. */
+  .detail-main table,
+  .detail-main img,
+  .detail-main figure,
+  .detail-main iframe,
+  .detail-main video,
+  .detail-main pre,
+  .detail-main blockquote,
+  .detail-main div,
+  .detail-main p,
+  .card table,
+  .card img,
+  .card figure,
+  .card iframe,
+  .card pre,
+  .card div,
+  .card p,
+  .concours-desc-card table,
+  .concours-desc-card img,
+  .concours-desc-card figure,
+  .concours-desc-card iframe,
+  .concours-desc-card pre,
+  .concours-desc-card div,
+  .concours-desc-card p {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+
+  /* Images & media: always scale down, never overflow */
+  .detail-main img,
+  .card img,
+  .concours-desc-card img {
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain;
+  }
+
+  /* Tables: give them their own horizontal scroll zone
+     so wide tables don't break the page layout */
+  .detail-main table,
+  .card table,
+  .concours-desc-card table {
+    display: block;
+    width: 100% !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap !important;
+    word-break: normal !important;
+  }
+
+  /* Table cells still wrap their own text */
+  .detail-main table td,
+  .detail-main table th,
+  .card table td,
+  .card table th,
+  .concours-desc-card table td,
+  .concours-desc-card table th {
+    white-space: normal !important;
+    word-break: break-word !important;
+    min-width: 80px;
+  }
+
+  /* iframes: contain within viewport */
+  .detail-main iframe,
+  .card iframe,
+  .concours-desc-card iframe {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* pre / code blocks: allow internal horizontal scroll */
+  .detail-main pre,
+  .card pre,
+  .concours-desc-card pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: pre !important;
+    word-break: normal !important;
+  }
+
+  /* PDF CTA section: ensure the button doesn't bleed */
+  .detail-main > .card > div[style*="marginTop"] {
+    box-sizing: border-box;
+    max-width: 100%;
+    overflow: hidden;
+  }
+
+  /* Breadcrumb: allow wrapping on very small screens */
+  .breadcrumb {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+
