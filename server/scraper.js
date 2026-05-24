@@ -12,7 +12,7 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 // ─── Serverless-aware constants ─────────────────────────────────────────────
 const IS_VERCEL      = !!process.env.VERCEL;
 const ITEM_LIMIT     = IS_VERCEL ? 3  : 15;   // max items per source per run
-const FETCH_TIMEOUT  = IS_VERCEL ? 5000 : 15000;
+const FETCH_TIMEOUT  = 20000;
 const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
 const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
 const BATCH_DELAY    = IS_VERCEL ? 0   : 2000; // inter-batch sleep (ms)
@@ -100,7 +100,7 @@ async function validateEmploiPublicUrl(url) {
       headers: { 'User-Agent': 'Mozilla/5.0' },
       httpsAgent,
       maxRedirects: 5,
-      timeout: Math.min(FETCH_TIMEOUT, IS_VERCEL ? 3500 : 8000),
+      timeout: Math.min(FETCH_TIMEOUT, IS_VERCEL ? 15000 : 8000),
       validateStatus: () => true,
     });
 
