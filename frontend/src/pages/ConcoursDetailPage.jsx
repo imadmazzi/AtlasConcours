@@ -42,6 +42,12 @@ export default function ConcoursDetailPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
     api.get('/concours/' + id).then(res => {
       setConcours(res.data);
       setLoading(false);

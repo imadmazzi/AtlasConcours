@@ -37,6 +37,12 @@ export default function JobDetailPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
     api.get('/emplois/' + id).then(res => {
       setJob(res.data);
       setLoading(false);
