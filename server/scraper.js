@@ -4,6 +4,7 @@ const cheerio = require('cheerio');
 const db = require('./db');
 const slugify = require('slugify');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { broadcastConcours, broadcastEmploi } = require('./services/telegramService');
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "VOTRE_CLE_API");
@@ -350,6 +351,8 @@ async function rewriteBatch(items, type = "concours") {
 
 /**
  * Insert a single processed item into the database immediately.
+ * On success, fires a non-blocking Telegram broadcast to the channel.
+ * ONLY fires for brand-new inserts — the caller already guards against duplicates.
  * Returns true on success, false on error.
  */
 function insertItemNow(item, type) {
@@ -363,9 +366,34 @@ function insertItemNow(item, type) {
   try {
     if (type === 'concours') {
       const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-      db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
+      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
+
+      // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
+      // Retrieve the freshly created record by its auto-assigned ID so the message
+      // contains the real DB id for the clickable deep-link.
+      // Any Telegram failure is silently caught; it NEVER crashes the cron cycle.
+      const newId = result && result.lastInsertRowid;
+      if (newId) {
+        const newRecord = db.data.concours.find(c => c.id == newId);
+        if (newRecord) {
+          broadcastConcours(newRecord).catch(err =>
+            console.error('❌ [Telegram] broadcastConcours error (ignored):', err.message)
+          );
+        }
+      }
     } else {
-      db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
+      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
+
+      // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
+      const newId = result && result.lastInsertRowid;
+      if (newId) {
+        const newRecord = db.data.emplois.find(e => e.id == newId);
+        if (newRecord) {
+          broadcastEmploi(newRecord).catch(err =>
+            console.error('❌ [Telegram] broadcastEmploi error (ignored):', err.message)
+          );
+        }
+      }
     }
     console.log(`  💾 Inserted: ${safeTitle.substring(0, 60)}…`);
     return true;
