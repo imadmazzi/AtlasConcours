@@ -34,8 +34,7 @@ export default function Footer() {
           <div className="footer-col">
             <h4>Contact</h4>
             <a href="mailto:contact@atlasconcours.ma">contact@atlasconcours.ma</a>
-            <a href="https://t.me/Mazzoxcommunity" target="_blank" rel="noopener noreferrer">Telegram</a>
-            <a href="https://wa.me/atlasconcours" target="_blank" rel="noreferrer">WhatsApp</a>
+            <a href="https://t.me/atlasconcours" target="_blank" rel="noopener noreferrer">Telegram</a>
           </div>
         </div>
         <div className="footer-bottom">
