@@ -9,6 +9,8 @@
  *   • Called from scraper.js › insertItemNow() right after a successful INSERT.
  *   • ONLY fires for brand-new inserts (caller responsibility — no duplicates).
  *   • All errors are caught and logged; they NEVER propagate to the cron cycle.
+ *   • Before every broadcast, the link is validated against the live Vercel API.
+ *     If the API returns 404, the message is NOT sent.
  *
  * Environment variables (set in .env and Vercel dashboard):
  *   TELEGRAM_BOT_TOKEN   – Bot API token from @BotFather
@@ -17,11 +19,13 @@
  */
 
 const axios = require('axios');
+const db = require('../db');
 
 const BOT_TOKEN  = process.env.TELEGRAM_BOT_TOKEN  || '';
 const CHANNEL_ID = process.env.TELEGRAM_CHANNEL_ID || '@atlasconcours';
 const BASE_URL   = `https://api.telegram.org/bot${BOT_TOKEN}`;
 const SITE_URL   = 'https://atlasconcours.vercel.app';
+const API_BASE   = `${SITE_URL}/api`;
 
 // Disable broadcasting when token is missing (dev environments without .env)
 function isConfigured() {
@@ -30,8 +34,6 @@ function isConfigured() {
 
 /**
  * Escape characters that have special meaning in Telegram HTML mode.
- * @param {string} str
- * @returns {string}
  */
 function escapeHtml(str) {
   return String(str || '')
@@ -42,9 +44,6 @@ function escapeHtml(str) {
 
 /**
  * Format a date string into a human-readable French date.
- * Falls back to the raw string if parsing fails.
- * @param {string} dateStr
- * @returns {string}
  */
 function formatDate(dateStr) {
   if (!dateStr || dateStr === 'N/A') return 'Consulter l\'annonce';
@@ -58,69 +57,95 @@ function formatDate(dateStr) {
 }
 
 /**
- * Build the Telegram HTML message for a new concours.
+ * Validate that a record with this identifier actually exists on the live site.
+ * Hits the live Vercel API — if it returns 404, the record does not exist there.
  *
- * @param {{ id: number, titre: string, organisme?: string, date_limite?: string }} concours
- * @returns {string} HTML-formatted Telegram message
+ * @param {'concours'|'emplois'} type
+ * @param {string|number} identifier  - slug or numeric id
+ * @returns {Promise<{ok: boolean, liveRecord: object|null}>}
  */
-function buildConcoursMessage(concours) {
-  const titre     = escapeHtml(concours.titre     || 'Nouveau Concours');
-  const organisme = escapeHtml(concours.organisme || 'Secteur Public');
-  const deadline  = escapeHtml(formatDate(concours.date_limite));
-  const link      = `${SITE_URL}/concours/${concours.id}`;
-
-  return [
-    `🎓 <b>Nouveau Concours Public</b>`,
-    ``,
-    `📢 <b>${titre}</b>`,
-    ``,
-    `🏛 <b>Organisme :</b> ${organisme}`,
-    `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
-    ``,
-    `🔗 <a href="${link}">Voir les détails et postuler ici</a>`,
-    ``,
-    `━━━━━━━━━━━━━━━━━━━━`,
-    `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
-    `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
-  ].join('\n');
+async function validateLiveRecord(type, identifier) {
+  const apiUrl = `${API_BASE}/${type}/${identifier}`;
+  console.log(`🔍 [Telegram] Validating live URL: ${apiUrl}`);
+  try {
+    const res = await axios.get(apiUrl, { timeout: 8000, validateStatus: () => true });
+    if (res.status === 200 && res.data && res.data.id) {
+      console.log(`  ✅ Record confirmed live (id: ${res.data.id}, slug: ${res.data.slug || 'N/A'})`);
+      return { ok: true, liveRecord: res.data };
+    }
+    console.warn(`  ⚠️  Live API returned HTTP ${res.status} for identifier "${identifier}" — skipping broadcast.`);
+    return { ok: false, liveRecord: null };
+  } catch (err) {
+    console.warn(`  ⚠️  Could not reach live API: ${err.message} — skipping broadcast.`);
+    return { ok: false, liveRecord: null };
+  }
 }
 
 /**
- * Build the Telegram HTML message for a new emploi (job offer).
- *
- * @param {{ id: number, titre: string, entreprise?: string, localisation?: string, date_limite?: string }} emploi
- * @returns {string} HTML-formatted Telegram message
+ * Build the Telegram HTML message for a new concours.
+ * Always uses the live record's slug for the link.
  */
-function buildEmploiMessage(emploi) {
-  const titre       = escapeHtml(emploi.titre       || 'Nouvelle Offre d\'Emploi');
-  const entreprise  = escapeHtml(emploi.entreprise  || emploi.organisme || 'Administration');
-  const localisation = escapeHtml(emploi.localisation || emploi.ville || 'Maroc');
-  const deadline    = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
-  const link        = `${SITE_URL}/jobs/${emploi.id}`;
+function buildConcoursMessage(concours, liveSlug) {
+  const titre     = escapeHtml(concours.titre     || 'Nouveau Concours');
+  const organisme = escapeHtml(concours.organisme || 'Secteur Public');
+  const deadline  = escapeHtml(formatDate(concours.date_limite));
+  const identifier = liveSlug || concours.slug || concours.id;
+  const link      = `${SITE_URL}/concours/${identifier}`;
 
-  return [
-    `💼 <b>Nouvelle Offre d'Emploi</b>`,
-    ``,
-    `📢 <b>${titre}</b>`,
-    ``,
-    `🏢 <b>Entreprise :</b> ${entreprise}`,
-    `📍 <b>Localisation :</b> ${localisation}`,
-    `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
-    ``,
-    `🔗 <a href="${link}">Voir l'offre complète et postuler</a>`,
-    ``,
-    `━━━━━━━━━━━━━━━━━━━━`,
-    `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
-    `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
-  ].join('\n');
+  return {
+    text: [
+      `🎓 <b>Nouveau Concours Public</b>`,
+      ``,
+      `📢 <b>${titre}</b>`,
+      ``,
+      `🏛 <b>Organisme :</b> ${organisme}`,
+      `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
+      ``,
+      `🔗 <a href="${link}">Voir les détails et postuler ici</a>`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
+      `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
+    ].join('\n'),
+    link
+  };
+}
+
+/**
+ * Build the Telegram HTML message for a new emploi.
+ * Always uses the live record's id for the link.
+ */
+function buildEmploiMessage(emploi, liveId) {
+  const titre        = escapeHtml(emploi.titre        || 'Nouvelle Offre d\'Emploi');
+  const entreprise   = escapeHtml(emploi.entreprise   || emploi.organisme || 'Administration');
+  const localisation = escapeHtml(emploi.localisation || emploi.ville     || 'Maroc');
+  const deadline     = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
+  const id           = liveId || emploi.id;
+  const link         = `${SITE_URL}/jobs/${id}`;
+
+  return {
+    text: [
+      `💼 <b>Nouvelle Offre d'Emploi</b>`,
+      ``,
+      `📢 <b>${titre}</b>`,
+      ``,
+      `🏢 <b>Entreprise :</b> ${entreprise}`,
+      `📍 <b>Localisation :</b> ${localisation}`,
+      `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
+      ``,
+      `🔗 <a href="${link}">Voir l'offre complète et postuler</a>`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
+      `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
+    ].join('\n'),
+    link
+  };
 }
 
 /**
  * Send a message to the Telegram channel via the Bot API.
  * Internal helper — always safe, never throws.
- *
- * @param {string} text   HTML-formatted message body
- * @returns {Promise<void>}
  */
 async function sendToChannel(text) {
   if (!isConfigured()) {
@@ -135,10 +160,10 @@ async function sendToChannel(text) {
         chat_id:                  CHANNEL_ID,
         text,
         parse_mode:               'HTML',
-        disable_web_page_preview: false,   // show rich link preview
+        disable_web_page_preview: false,
       },
       {
-        timeout: 10000,   // 10 s — never block the scraper for longer
+        timeout: 10000,
         headers: { 'Content-Type': 'application/json' },
       }
     );
@@ -149,35 +174,57 @@ async function sendToChannel(text) {
       console.warn('⚠️  [Telegram] API returned ok=false:', JSON.stringify(response.data));
     }
   } catch (err) {
-    // Network error, rate-limit, bad token — log but NEVER rethrow
-    const status  = err.response?.status;
-    const apiErr  = err.response?.data?.description || err.message;
+    const status = err.response?.status;
+    const apiErr = err.response?.data?.description || err.message;
     console.error(`❌ [Telegram] Broadcast failed (HTTP ${status || 'N/A'}): ${apiErr}`);
   }
 }
 
 /**
  * Broadcast a newly inserted concours to the Telegram channel.
- * Safe to call fire-and-forget — catches all errors internally.
+ * Validates the record exists on the live site before sending.
  *
- * @param {{ id: number, titre: string, organisme?: string, date_limite?: string }} concours
- * @returns {Promise<void>}
+ * @param {object} inputItem The concours object to broadcast
  */
 async function broadcastConcours(concours) {
-  const text = buildConcoursMessage(concours);
+  // Use the exact object passed to the function
+  const identifier = concours.slug || concours.id;
+  if (!identifier) {
+    console.warn('⚠️  [Telegram] Concours has no slug or id — skipping broadcast.');
+    return;
+  }
+
+  const { ok, liveRecord } = await validateLiveRecord('concours', identifier);
+  if (!ok) return;  // URL is broken on the live site — do NOT send
+
+  const { text, link } = buildConcoursMessage(concours, liveRecord?.slug);
+  console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
+  
   await sendToChannel(text);
+  await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
 /**
  * Broadcast a newly inserted emploi to the Telegram channel.
- * Safe to call fire-and-forget — catches all errors internally.
+ * Validates the record exists on the live site before sending.
  *
- * @param {{ id: number, titre: string, entreprise?: string, localisation?: string, date_limite?: string }} emploi
- * @returns {Promise<void>}
+ * @param {object} inputItem The emploi object to broadcast
  */
 async function broadcastEmploi(emploi) {
-  const text = buildEmploiMessage(emploi);
+  // Use the exact object passed to the function
+  if (!emploi.id) {
+    console.warn('⚠️  [Telegram] Emploi has no id — skipping broadcast.');
+    return;
+  }
+
+  const { ok, liveRecord } = await validateLiveRecord('emplois', emploi.id);
+  if (!ok) return;  // URL is broken on the live site — do NOT send
+
+  const { text, link } = buildEmploiMessage(emploi, liveRecord?.id);
+  console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
+  
   await sendToChannel(text);
+  await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
 module.exports = { broadcastConcours, broadcastEmploi };
