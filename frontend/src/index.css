@@ -95,6 +95,15 @@ a { text-decoration: none; color: inherit; }
   list-style: none !important;
 }
 
+.menu-btn {
+  display: none;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: var(--text);
+  cursor: pointer;
+}
+
 /* ==================== 📱 MOBILE RESPONSIVE (768px & below) ==================== */
 @media (max-width: 768px) {
   .navbar-container {
@@ -157,14 +166,6 @@ a { text-decoration: none; color: inherit; }
 .nav-logo .logo-atlas { color: var(--primary); }
 .nav-logo .logo-concours { color: var(--accent); }
 
-.menu-btn {
-  display: none;
-  background: transparent;
-  border: none;
-  font-size: 24px;
-  color: var(--text);
-  cursor: pointer;
-}
 
 /* Previous nav-links logic merged above */
 
