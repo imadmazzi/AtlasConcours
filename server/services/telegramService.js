@@ -83,13 +83,13 @@ async function validateLiveRecord(type, identifier) {
 
 /**
  * Build the Telegram HTML message for a new concours.
- * Always uses the live record's slug for the link.
+ * Always uses the exact object's properties for the link.
  */
-function buildConcoursMessage(concours, liveSlug) {
+function buildConcoursMessage(concours) {
   const titre     = escapeHtml(concours.titre     || 'Nouveau Concours');
   const organisme = escapeHtml(concours.organisme || 'Secteur Public');
   const deadline  = escapeHtml(formatDate(concours.date_limite));
-  const identifier = liveSlug || concours.slug || concours.id;
+  const identifier = concours.slug || concours.id;
   const link      = `${SITE_URL}/concours/${identifier}`;
 
   return {
@@ -113,14 +113,14 @@ function buildConcoursMessage(concours, liveSlug) {
 
 /**
  * Build the Telegram HTML message for a new emploi.
- * Always uses the live record's id for the link.
+ * Always uses the exact object's properties for the link.
  */
-function buildEmploiMessage(emploi, liveId) {
+function buildEmploiMessage(emploi) {
   const titre        = escapeHtml(emploi.titre        || 'Nouvelle Offre d\'Emploi');
   const entreprise   = escapeHtml(emploi.entreprise   || emploi.organisme || 'Administration');
   const localisation = escapeHtml(emploi.localisation || emploi.ville     || 'Maroc');
   const deadline     = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
-  const id           = liveId || emploi.id;
+  const id           = emploi.id;
   const link         = `${SITE_URL}/jobs/${id}`;
 
   return {
@@ -194,10 +194,10 @@ async function broadcastConcours(concours) {
     return;
   }
 
-  const { ok, liveRecord } = await validateLiveRecord('concours', identifier);
+  const { ok } = await validateLiveRecord('concours', identifier);
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
-  const { text, link } = buildConcoursMessage(concours, liveRecord?.slug);
+  const { text, link } = buildConcoursMessage(concours);
   console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
   
   await sendToChannel(text);
@@ -217,10 +217,10 @@ async function broadcastEmploi(emploi) {
     return;
   }
 
-  const { ok, liveRecord } = await validateLiveRecord('emplois', emploi.id);
+  const { ok } = await validateLiveRecord('emplois', emploi.id);
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
-  const { text, link } = buildEmploiMessage(emploi, liveRecord?.id);
+  const { text, link } = buildEmploiMessage(emploi);
   console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
   
   await sendToChannel(text);
