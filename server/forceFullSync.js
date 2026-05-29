@@ -7,6 +7,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 async function forceFullSync() {
   console.log("🚀 Starting Force Full Sync to Telegram...");
 
+  await db.init();
+
   if (!db.data || (!db.data.concours && !db.data.emplois)) {
     console.error("❌ Database data is not loaded properly.");
     return;
