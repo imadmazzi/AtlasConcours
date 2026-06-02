@@ -140,8 +140,29 @@ app.post('/api/admin/push-scrape', async (req, res) => {
       return res.status(400).json({ error: 'Refusing to replace listings with an empty array unless allowEmpty=true.' });
     }
 
-    if (emplois) db.data.emplois = normalizePushedListings(emplois, 'emplois');
-    if (concours) db.data.concours = normalizePushedListings(concours, 'concours');
+    if (emplois) {
+      const normalized = normalizePushedListings(emplois, 'emplois');
+      const existingUrls = new Set(db.data.emplois.map(e => e.lien_candidature));
+      for (const item of normalized) {
+        if (!existingUrls.has(item.lien_candidature)) {
+          item.id = db.data.emplois.length > 0 ? Math.max(...db.data.emplois.map(e => Number(e.id) || 0)) + 1 : 1;
+          db.data.emplois.push(item);
+          existingUrls.add(item.lien_candidature);
+        }
+      }
+    }
+    
+    if (concours) {
+      const normalized = normalizePushedListings(concours, 'concours');
+      const existingUrls = new Set(db.data.concours.map(c => c.lien_source));
+      for (const item of normalized) {
+        if (!existingUrls.has(item.lien_source)) {
+          item.id = db.data.concours.length > 0 ? Math.max(...db.data.concours.map(c => Number(c.id) || 0)) + 1 : 1;
+          db.data.concours.push(item);
+          existingUrls.add(item.lien_source);
+        }
+      }
+    }
 
     await db.save();
     await db.flush();

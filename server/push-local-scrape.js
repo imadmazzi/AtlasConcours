@@ -43,10 +43,6 @@ async function main() {
   const db = require('./db');
   await db.init();
 
-  db.data.emplois = [];
-  db.data.concours = [];
-  await db.save();
-
   const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
   const results = {
     anapec: await runAnapecScraper(FORCE),

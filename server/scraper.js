@@ -12,7 +12,8 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 // ─── Serverless-aware constants ─────────────────────────────────────────────
 const IS_VERCEL      = !!process.env.VERCEL;
-const ITEM_LIMIT     = IS_VERCEL ? 3  : 15;   // max items per source per run
+const ITEM_LIMIT     = IS_VERCEL ? 10 : 50;   // max items per source per run
+const MAX_PAGES      = IS_VERCEL ? 3  : 8;    // max pages to scrape per source
 const FETCH_TIMEOUT  = 20000;
 const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
 const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
@@ -508,31 +509,61 @@ async function processPipeline(items, type) {
 }
 
 async function runScraper(force = false) {
-  console.log("🚀 Scraper Concours (Optimisé)...");
+  console.log("🚀 Scraper Concours (Optimisé + Pagination)...");
   const baseUrl = EMPLOI_PUBLIC_BASE;
   try {
-    const res = await fetchWithRetry(`${baseUrl}/fr/concours-liste`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(res.data);
     const existingLinks = new Set(db.data.concours.map(c => normalizeEmploiPublicUrl(c.lien_source, 'concours') || c.lien_source));
-    
-    const newItems = [];
-    $('a.card.card-scale').each((i, el) => {
-      const link = getEmploiPublicCardUrl($, el, 'concours');
-      if (!link) return;
-      if (!force && existingLinks.has(link)) return;
+    const allNewItems = [];
 
-      const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
-      let deadline = "";
-      $(el).find('div, span, p').each((j, sel) => {
-        if ($(sel).text().includes("Limite")) deadline = $(sel).text().split(':')[1]?.trim() || "";
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      if (allNewItems.length >= ITEM_LIMIT) break;
+
+      const pageUrl = page === 1
+        ? `${baseUrl}/fr/concours-liste`
+        : `${baseUrl}/fr/concours-liste?page=${page}`;
+      console.log(`  📄 Concours page ${page}/${MAX_PAGES}: ${pageUrl}`);
+
+      let $;
+      try {
+        const res = await fetchWithRetry(pageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        $ = cheerio.load(res.data);
+      } catch (pageErr) {
+        console.warn(`  ⚠️ Concours page ${page} fetch failed: ${pageErr.message}`);
+        break;
+      }
+
+      let pageItemCount = 0;
+      $('a.card.card-scale').each((i, el) => {
+        if (allNewItems.length >= ITEM_LIMIT) return false;
+        const link = getEmploiPublicCardUrl($, el, 'concours');
+        if (!link) return;
+        if (!force && existingLinks.has(link)) return;
+        // Also skip if we already collected this link in a previous page
+        if (allNewItems.some(item => item.url === link)) return;
+
+        const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
+        let deadline = "";
+        $(el).find('div, span, p').each((j, sel) => {
+          if ($(sel).text().includes("Limite")) deadline = $(sel).text().split(':')[1]?.trim() || "";
+        });
+
+        allNewItems.push({ title, url: link, deadline });
+        pageItemCount++;
       });
 
-      newItems.push({ title, url: link, deadline });
-    });
+      console.log(`    → Found ${pageItemCount} new concours on page ${page}`);
+      // If no cards found on this page, stop paginating (last page reached)
+      if (pageItemCount === 0 && $('a.card.card-scale').length === 0) break;
 
-    if (newItems.length > 0) {
-      const { valid: limited, skipped } = await validatedEmploiPublicItems(newItems, ITEM_LIMIT, 'concours');
-      console.log(`📋 Concours: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+      // Small delay between pages to be polite
+      if (page < MAX_PAGES && allNewItems.length < ITEM_LIMIT) {
+        await new Promise(r => setTimeout(r, IS_VERCEL ? 300 : 1000));
+      }
+    }
+
+    if (allNewItems.length > 0) {
+      const { valid: limited, skipped } = await validatedEmploiPublicItems(allNewItems, ITEM_LIMIT, 'concours');
+      console.log(`📋 Concours: ${allNewItems.length} found across pages, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
       console.log(`Emploi-Public concours validation: ${skipped} dead skipped, ${limited.length} live kept.`);
       if (limited.length === 0) {
         return { added: 0, errors: 0, skipped, reason: 'No live Emploi-Public concours detail URLs' };
@@ -545,7 +576,7 @@ async function runScraper(force = false) {
     }
     
     if (force || IS_VERCEL) {
-      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public concours parsed on page" };
+      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public concours parsed on pages" };
     }
     return { added: 0, errors: 0 };
   } catch (err) { 
@@ -558,24 +589,52 @@ async function runScraper(force = false) {
 }
 
 async function runJobScraper(force = false) {
-  console.log("🚀 Scraper Emplois (Optimisé)...");
+  console.log("🚀 Scraper Emplois (Optimisé + Pagination)...");
   const baseUrl = EMPLOI_PUBLIC_BASE;
   try {
-    const res = await fetchWithRetry(`${baseUrl}/fr/emploi-sup-liste`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const $ = cheerio.load(res.data);
     const existingLinks = new Set(db.data.emplois.map(e => normalizeEmploiPublicUrl(e.lien_candidature, 'job') || e.lien_candidature));
-    
-    const newItems = [];
-    $('a.card.card-scale').each((i, el) => {
-      const link = getEmploiPublicCardUrl($, el, 'job');
-      if (!link) return;
-      if (!force && existingLinks.has(link)) return;
-      newItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
-    });
+    const allNewItems = [];
 
-    if (newItems.length > 0) {
-      const { valid: limited, skipped } = await validatedEmploiPublicItems(newItems, ITEM_LIMIT, 'job');
-      console.log(`📋 Emplois: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      if (allNewItems.length >= ITEM_LIMIT) break;
+
+      const pageUrl = page === 1
+        ? `${baseUrl}/fr/emploi-sup-liste`
+        : `${baseUrl}/fr/emploi-sup-liste?page=${page}`;
+      console.log(`  📄 Emplois page ${page}/${MAX_PAGES}: ${pageUrl}`);
+
+      let $;
+      try {
+        const res = await fetchWithRetry(pageUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+        $ = cheerio.load(res.data);
+      } catch (pageErr) {
+        console.warn(`  ⚠️ Emplois page ${page} fetch failed: ${pageErr.message}`);
+        break;
+      }
+
+      let pageItemCount = 0;
+      $('a.card.card-scale').each((i, el) => {
+        if (allNewItems.length >= ITEM_LIMIT) return false;
+        const link = getEmploiPublicCardUrl($, el, 'job');
+        if (!link) return;
+        if (!force && existingLinks.has(link)) return;
+        if (allNewItems.some(item => item.url === link)) return;
+
+        allNewItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
+        pageItemCount++;
+      });
+
+      console.log(`    → Found ${pageItemCount} new emplois on page ${page}`);
+      if (pageItemCount === 0 && $('a.card.card-scale').length === 0) break;
+
+      if (page < MAX_PAGES && allNewItems.length < ITEM_LIMIT) {
+        await new Promise(r => setTimeout(r, IS_VERCEL ? 300 : 1000));
+      }
+    }
+
+    if (allNewItems.length > 0) {
+      const { valid: limited, skipped } = await validatedEmploiPublicItems(allNewItems, ITEM_LIMIT, 'job');
+      console.log(`📋 Emplois: ${allNewItems.length} found across pages, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
       console.log(`Emploi-Public job validation: ${skipped} dead skipped, ${limited.length} live kept.`);
       if (limited.length === 0) {
         return { added: 0, errors: 0, skipped, reason: 'No live Emploi-Public job detail URLs' };
@@ -588,7 +647,7 @@ async function runJobScraper(force = false) {
     }
     
     if (force || IS_VERCEL) {
-      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public jobs parsed on page" };
+      return { added: 0, errors: 0, skipped: 0, reason: "No new Emploi-Public jobs parsed on pages" };
     }
     return { added: 0, errors: 0 };
   } catch (err) { 
@@ -601,61 +660,95 @@ async function runJobScraper(force = false) {
 }
 
 async function runAnapecScraper(force = false) {
-  console.log("🚀 Scraper ANAPEC (Optimisé)...");
+  console.log("🚀 Scraper ANAPEC (Optimisé + Pagination)...");
   const baseUrl = "https://www.anapec.org";
   try {
-    const res = await fetchWithRetry(`${baseUrl}/sigec-app-rv/fr/chercheurs/resultat_recherche/tout:all`, { 
-      headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent 
-    });
-    const $ = cheerio.load(res.data);
     const existingLinks = new Set(db.data.emplois.map(e => e.lien_candidature));
-    
-    const newItems = [];
-    let skippedCount = 0;
-    const rows = $('table tr').slice(1);
-    
-    rows.each((i, el) => {
-      const linkEl = $(el).find('a.nyroModal');
-      if (!linkEl.length) return;
-      const href = linkEl.attr('href') || '';
-      if (!href) return;
+    const allNewItems = [];
+    let totalSkippedCount = 0;
+    let totalRowsAnalyzed = 0;
 
-      // The nyroModal href leads to the only working direct link that bypasses the PHP session check.
-      // The old /chercheurs/resultat_recherche/detail_offre/ URL redirects external visitors.
-      const idMatch = href.match(/\/(\d{5,})\//);
-      if (!idMatch) return; // skip rows with no valid job ID
-      const jobId = idMatch[1];
-      const link = `${baseUrl}/sigec-app-rv/fr/entreprises/bloc_offre_home/${jobId}/resultat_recherche`;
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      if (allNewItems.length >= ITEM_LIMIT) break;
 
-      if (!force && existingLinks.has(link)) {
-        skippedCount++;
-        return;
+      // ANAPEC uses /page:<n> suffix for pagination
+      const pageUrl = page === 1
+        ? `${baseUrl}/sigec-app-rv/fr/chercheurs/resultat_recherche/tout:all`
+        : `${baseUrl}/sigec-app-rv/fr/chercheurs/resultat_recherche/tout:all/page:${page}`;
+      console.log(`  📄 ANAPEC page ${page}/${MAX_PAGES}: ${pageUrl}`);
+
+      let $;
+      try {
+        const res = await fetchWithRetry(pageUrl, { 
+          headers: { 'User-Agent': 'Mozilla/5.0' }, httpsAgent 
+        });
+        $ = cheerio.load(res.data);
+      } catch (pageErr) {
+        console.warn(`  ⚠️ ANAPEC page ${page} fetch failed: ${pageErr.message}`);
+        break;
       }
-      const tds = $(el).find('td');
-      const reference = tds.length > 1 ? tds.eq(1).text().trim() : '';      // e.g. "ET2305261125170"
-      const titre     = tds.length > 3 ? tds.eq(3).text().trim().replace(/\s+/g, ' ') : ''; // e.g. "Technicien automaticien"
-      const enterprise = tds.length > 1 ? tds.eq(1).text().trim() || 'Administration' : 'Administration';
-      const location   = tds.length > 6 ? tds.eq(6).text().trim() || 'Maroc' : (tds.length > 2 ? tds.eq(2).text().trim() || 'Maroc' : 'Maroc');
-      const title = titre || reference || "Offre d'emploi ANAPEC";
 
-      newItems.push({ title, url: link, enterprise, location, reference });
-    });
+      const rows = $('table tr').slice(1);
+      totalRowsAnalyzed += rows.length;
+      if (rows.length === 0) {
+        console.log(`    → No rows on page ${page}, stopping pagination.`);
+        break;
+      }
+
+      let pageItemCount = 0;
+      rows.each((i, el) => {
+        if (allNewItems.length >= ITEM_LIMIT) return false;
+        const linkEl = $(el).find('a.nyroModal');
+        if (!linkEl.length) return;
+        const href = linkEl.attr('href') || '';
+        if (!href) return;
+
+        const idMatch = href.match(/\/(\d{5,})\//);
+        if (!idMatch) return; // skip rows with no valid job ID
+        const jobId = idMatch[1];
+        const link = `${baseUrl}/sigec-app-rv/fr/entreprises/bloc_offre_home/${jobId}/resultat_recherche`;
+
+        if (!force && existingLinks.has(link)) {
+          totalSkippedCount++;
+          return;
+        }
+        // Also skip if already collected from a previous page
+        if (allNewItems.some(item => item.url === link)) return;
+
+        const tds = $(el).find('td');
+        const reference = tds.length > 1 ? tds.eq(1).text().trim() : '';      // e.g. "ET2305261125170"
+        const titre     = tds.length > 3 ? tds.eq(3).text().trim().replace(/\s+/g, ' ') : ''; // e.g. "Technicien automaticien"
+        const enterprise = tds.length > 1 ? tds.eq(1).text().trim() || 'Administration' : 'Administration';
+        const location   = tds.length > 6 ? tds.eq(6).text().trim() || 'Maroc' : (tds.length > 2 ? tds.eq(2).text().trim() || 'Maroc' : 'Maroc');
+        const title = titre || reference || "Offre d'emploi ANAPEC";
+
+        allNewItems.push({ title, url: link, enterprise, location, reference });
+        pageItemCount++;
+      });
+
+      console.log(`    → Found ${pageItemCount} new ANAPEC jobs on page ${page}`);
+
+      // Small delay between pages to be polite
+      if (page < MAX_PAGES && allNewItems.length < ITEM_LIMIT) {
+        await new Promise(r => setTimeout(r, IS_VERCEL ? 300 : 1000));
+      }
+    }
 
     let stats = { added: 0, errors: 0 };
-    if (newItems.length > 0) {
-      const limited = newItems.slice(0, ITEM_LIMIT);
-      console.log(`📋 ANAPEC: ${newItems.length} found, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
+    if (allNewItems.length > 0) {
+      const limited = allNewItems.slice(0, ITEM_LIMIT);
+      console.log(`📋 ANAPEC: ${allNewItems.length} found across pages, processing ${limited.length} (limit: ${ITEM_LIMIT})`);
       stats = await processPipeline(limited, 'job');
       if (stats.added === 0 && (force || IS_VERCEL)) {
         // Fallback disabled: We skip fake entries instead of inserting them.
       }
     } else {
       if (force || IS_VERCEL) {
-        // Fallback disabled: No new items parsed on page, skipping failover.
+        // Fallback disabled: No new items parsed on pages, skipping failover.
       }
     }
     
-    console.log(`📊 Bilan ANAPEC: ${rows.length} analysés, ${skippedCount} ignorés (doublons), ${stats?.added || 0} ajoutés, ${stats?.errors || 0} erreurs.`);
+    console.log(`📊 Bilan ANAPEC: ${totalRowsAnalyzed} analysés, ${totalSkippedCount} ignorés (doublons), ${stats?.added || 0} ajoutés, ${stats?.errors || 0} erreurs.`);
     return stats;
   } catch (err) { 
     console.error("❌ Erreur Scraper ANAPEC:", err.message); 
