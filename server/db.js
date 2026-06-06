@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { isExpired } = require('./utils/dateParser');
 const dns = require('dns');
 const https = require('https');
 const bcrypt = require('bcryptjs');
@@ -426,7 +427,20 @@ const db = {
           }
           const limit = args[args.length - 2];
           const offset = args[args.length - 1];
-          return list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(offset, offset + limit);
+          return list.sort((a,b) => {
+            const aExp = isExpired(a.date_limite);
+            const bExp = isExpired(b.date_limite);
+            if (aExp && !bExp) return 1;
+            if (!aExp && bExp) return -1;
+            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+          }).slice(offset, offset + limit).map(c => {
+             const exp = isExpired(c.date_limite);
+             return {
+                ...c,
+                is_expired: exp,
+                titre: (exp && !(c.titre||'').includes('[Expiré]')) ? `[Expiré] ${c.titre}` : c.titre
+             };
+          });
         }
         if (query.includes('FROM emplois')) {
           let list = [...this.data.emplois];
@@ -443,9 +457,35 @@ const db = {
           if (query.includes('LIMIT ? OFFSET ?')) {
             const limit = typeof args[args.length - 2] === 'number' ? args[args.length - 2] : 12;
             const offset = typeof args[args.length - 1] === 'number' ? args[args.length - 1] : 0;
-            return list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at)).slice(offset, offset + limit);
+            return list.sort((a,b) => {
+              const aExp = isExpired(a.date_limite || a.deadline);
+              const bExp = isExpired(b.date_limite || b.deadline);
+              if (aExp && !bExp) return 1;
+              if (!aExp && bExp) return -1;
+              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+            }).slice(offset, offset + limit).map(e => {
+               const exp = isExpired(e.date_limite || e.deadline);
+               return {
+                  ...e,
+                  is_expired: exp,
+                  titre: (exp && !(e.titre||'').includes('[Expiré]')) ? `[Expiré] ${e.titre}` : e.titre
+               };
+            });
           }
-          return list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+          return list.sort((a,b) => {
+              const aExp = isExpired(a.date_limite || a.deadline);
+              const bExp = isExpired(b.date_limite || b.deadline);
+              if (aExp && !bExp) return 1;
+              if (!aExp && bExp) return -1;
+              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+          }).map(e => {
+             const exp = isExpired(e.date_limite || e.deadline);
+             return {
+                ...e,
+                is_expired: exp,
+                titre: (exp && !(e.titre||'').includes('[Expiré]')) ? `[Expiré] ${e.titre}` : e.titre
+             };
+          });
         }
       },
       get: (...args) => {
