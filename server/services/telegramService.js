@@ -89,7 +89,7 @@ function buildConcoursMessage(concours) {
   const titre     = escapeHtml(concours.titre     || 'Nouveau Concours');
   const organisme = escapeHtml(concours.organisme || 'Secteur Public');
   const deadline  = escapeHtml(formatDate(concours.date_limite));
-  const identifier = concours.slug || concours.id;
+  const identifier = concours.slug || concours._id || concours.id;
   const link      = `${SITE_URL}/concours/${identifier}`;
 
   return {
@@ -120,7 +120,7 @@ function buildEmploiMessage(emploi) {
   const entreprise   = escapeHtml(emploi.entreprise   || emploi.organisme || 'Administration');
   const localisation = escapeHtml(emploi.localisation || emploi.ville     || 'Maroc');
   const deadline     = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
-  const id           = emploi.id;
+  const id           = emploi._id || emploi.id;
   const link         = `${SITE_URL}/jobs/${id}`;
 
   return {
@@ -188,7 +188,7 @@ async function sendToChannel(text) {
  */
 async function broadcastConcours(concours) {
   // Use the exact object passed to the function
-  const identifier = concours.slug || concours.id;
+  const identifier = concours.slug || concours._id || concours.id;
   if (!identifier) {
     console.warn('⚠️  [Telegram] Concours has no slug or id — skipping broadcast.');
     return;
@@ -198,7 +198,10 @@ async function broadcastConcours(concours) {
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
   const { text, link } = buildConcoursMessage(concours);
-  console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
+  
+  const titleLog = concours.titre || concours.title || 'Unknown Title';
+  console.log(`[TELEGRAM MATCH] Sending title: "${titleLog}" with URL: "${link}"`);
+
   
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
@@ -212,16 +215,20 @@ async function broadcastConcours(concours) {
  */
 async function broadcastEmploi(emploi) {
   // Use the exact object passed to the function
-  if (!emploi.id) {
+  const identifier = emploi._id || emploi.id;
+  if (!identifier) {
     console.warn('⚠️  [Telegram] Emploi has no id — skipping broadcast.');
     return;
   }
 
-  const { ok } = await validateLiveRecord('emplois', emploi.id);
+  const { ok } = await validateLiveRecord('emplois', identifier);
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
   const { text, link } = buildEmploiMessage(emploi);
-  console.log(`🔗 [Telegram] URL to broadcast: ${link}`);
+  
+  const titleLog = emploi.titre || emploi.title || 'Unknown Title';
+  console.log(`[TELEGRAM MATCH] Sending title: "${titleLog}" with URL: "${link}"`);
+
   
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
