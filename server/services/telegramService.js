@@ -43,17 +43,62 @@ function escapeHtml(str) {
 }
 
 /**
+ * Sanitize date_limite: strip trailing garbage like " - 16", extra whitespace, etc.
+ */
+function sanitizeDate(dateStr) {
+  if (!dateStr || dateStr === 'N/A') return dateStr;
+  // Remove trailing " - <digits>" patterns and trim
+  return String(dateStr)
+    .replace(/\s*-\s*\d{1,4}\s*$/, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Format a date string into a human-readable French date.
  */
 function formatDate(dateStr) {
-  if (!dateStr || dateStr === 'N/A') return 'Consulter l\'annonce';
+  const cleaned = sanitizeDate(dateStr);
+  if (!cleaned || cleaned === 'N/A') return 'Consulter l\'annonce';
   try {
-    const d = new Date(dateStr);
-    if (isNaN(d)) return String(dateStr).trim();
+    const d = new Date(cleaned);
+    if (isNaN(d)) return cleaned;
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
   } catch (_) {
-    return String(dateStr).trim();
+    return cleaned;
   }
+}
+
+/**
+ * Extract metadata from description HTML, using the SAME regex logic
+ * as the frontend ConcoursDetailPage.jsx / JobDetailPage.jsx.
+ * This ensures Telegram messages show the SAME info as the actual page.
+ */
+function extractMetaFromHtml(html) {
+  if (!html) return {};
+  const text = html.replace(/<[^>]*>/gm, ' ').replace(/\s+/g, ' ');
+
+  const grab = (re) => {
+    const m = text.match(re);
+    return m ? m[1].trim() : null;
+  };
+
+  return {
+    organisme:  grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i),
+    grade:      grab(/(?:Grade|Échelle|Echelon|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    entreprise: grab(/(?:Entreprise|Société|Employeur)[\s:–\-]*([^|<\n]{3,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    contrat:    grab(/(?:Type de contrat|Contrat)[\s:–\-]*([^\n.<]{2,50})/i),
+  };
+}
+
+/**
+ * Detect if an "entreprise" value is actually an ANAPEC reference code
+ * (e.g. "EL2205261124948", "AG2205261124954") rather than a real company name.
+ */
+function isAnapecCode(value) {
+  if (!value) return false;
+  return /^[A-Z]{2}\d{10,}$/.test(value.trim());
 }
 
 /**
@@ -83,44 +128,72 @@ async function validateLiveRecord(type, identifier) {
 
 /**
  * Build the Telegram HTML message for a new concours.
- * Always uses the exact object's properties for the link.
+ * Uses the LIVE record from the API to guarantee title/URL/details are consistent.
+ * Falls back to extracting organisme from description HTML (same as frontend).
  */
-function buildConcoursMessage(concours) {
-  const titre     = escapeHtml(concours.titre     || 'Nouveau Concours');
-  const organisme = escapeHtml(concours.organisme || 'Secteur Public');
-  const deadline  = escapeHtml(formatDate(concours.date_limite));
-  const identifier = concours.slug || concours._id || concours.id;
+function buildConcoursMessage(liveRecord) {
+  const titre     = escapeHtml(liveRecord.titre || 'Nouveau Concours');
+
+  // Extract organisme from description HTML — same logic the frontend uses
+  const meta      = extractMetaFromHtml(liveRecord.description);
+  const organisme = escapeHtml(liveRecord.organisme || meta.organisme || liveRecord.categorie || '');
+  const deadline  = escapeHtml(formatDate(liveRecord.date_limite));
+  const identifier = liveRecord.slug || liveRecord.id;
   const link      = `${SITE_URL}/concours/${identifier}`;
 
+  const lines = [
+    `🎓 <b>Nouveau Concours Public</b>`,
+    ``,
+    `📢 <b>${titre}</b>`,
+    ``,
+  ];
+
+  // Only show Organisme if we have a real value
+  if (organisme) {
+    lines.push(`🏛 <b>Organisme :</b> ${organisme}`);
+  }
+
+  // Show postes count if available
+  if (meta.postes) {
+    lines.push(`👥 <b>Postes :</b> ${escapeHtml(meta.postes)}`);
+  }
+
+  lines.push(
+    `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
+    ``,
+    `🔗 <a href="${link}">Voir les détails et postuler ici</a>`,
+    ``,
+    `━━━━━━━━━━━━━━━━━━━━`,
+    `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
+    `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
+  );
+
   return {
-    text: [
-      `🎓 <b>Nouveau Concours Public</b>`,
-      ``,
-      `📢 <b>${titre}</b>`,
-      ``,
-      `🏛 <b>Organisme :</b> ${organisme}`,
-      `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
-      ``,
-      `🔗 <a href="${link}">Voir les détails et postuler ici</a>`,
-      ``,
-      `━━━━━━━━━━━━━━━━━━━━`,
-      `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
-      `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
-    ].join('\n'),
+    text: lines.join('\n'),
     link
   };
 }
 
 /**
  * Build the Telegram HTML message for a new emploi.
- * Always uses the exact object's properties for the link.
+ * Uses the LIVE record from the API to guarantee title/URL/details are consistent.
+ * Detects and replaces ANAPEC reference codes with a clean fallback.
  */
-function buildEmploiMessage(emploi) {
-  const titre        = escapeHtml(emploi.titre        || 'Nouvelle Offre d\'Emploi');
-  const entreprise   = escapeHtml(emploi.entreprise   || emploi.organisme || 'Administration');
-  const localisation = escapeHtml(emploi.localisation || emploi.ville     || 'Maroc');
-  const deadline     = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
-  const id           = emploi._id || emploi.id;
+function buildEmploiMessage(liveRecord) {
+  const titre = escapeHtml(liveRecord.titre || 'Nouvelle Offre d\'Emploi');
+
+  // Extract metadata from HTML description (same as frontend)
+  const meta = extractMetaFromHtml(liveRecord.description);
+
+  // Use DB entreprise, but if it's an ANAPEC code, fall back to extracted or generic
+  let rawEntreprise = liveRecord.entreprise || liveRecord.organisme || '';
+  if (isAnapecCode(rawEntreprise)) {
+    rawEntreprise = meta.entreprise || 'Secteur Public / Privé';
+  }
+  const entreprise   = escapeHtml(rawEntreprise || 'Administration');
+  const localisation = escapeHtml(liveRecord.localisation || liveRecord.ville || 'Maroc');
+  const deadline     = escapeHtml(formatDate(liveRecord.date_limite || liveRecord.deadline));
+  const id           = liveRecord.id;
   const link         = `${SITE_URL}/jobs/${id}`;
 
   return {
@@ -183,8 +256,10 @@ async function sendToChannel(text) {
 /**
  * Broadcast a newly inserted concours to the Telegram channel.
  * Validates the record exists on the live site before sending.
+ * Uses the LIVE record from the API to build the message — this guarantees
+ * the Telegram text matches exactly what the user sees on the page.
  *
- * @param {object} inputItem The concours object to broadcast
+ * @param {object} concours The concours object to broadcast
  */
 async function broadcastConcours(concours) {
   // Use the exact object passed to the function
@@ -194,15 +269,16 @@ async function broadcastConcours(concours) {
     return;
   }
 
-  const { ok } = await validateLiveRecord('concours', identifier);
+  const { ok, liveRecord } = await validateLiveRecord('concours', identifier);
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
-  const { text, link } = buildConcoursMessage(concours);
-  
-  const titleLog = concours.titre || concours.title || 'Unknown Title';
-  console.log(`[TELEGRAM MATCH] Sending title: "${titleLog}" with URL: "${link}"`);
+  // CRITICAL: Build message from the LIVE API record, not the local object.
+  // This guarantees the Telegram message text matches the page the user will see.
+  const source = liveRecord || concours;
+  const { text, link } = buildConcoursMessage(source);
 
-  
+  console.log(`[TELEGRAM MATCH] Sending title: "${source.titre}" with URL: "${link}"`);
+
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
 }
@@ -210,8 +286,9 @@ async function broadcastConcours(concours) {
 /**
  * Broadcast a newly inserted emploi to the Telegram channel.
  * Validates the record exists on the live site before sending.
+ * Uses the LIVE record from the API to build the message.
  *
- * @param {object} inputItem The emploi object to broadcast
+ * @param {object} emploi The emploi object to broadcast
  */
 async function broadcastEmploi(emploi) {
   // Use the exact object passed to the function
@@ -221,15 +298,15 @@ async function broadcastEmploi(emploi) {
     return;
   }
 
-  const { ok } = await validateLiveRecord('emplois', identifier);
+  const { ok, liveRecord } = await validateLiveRecord('emplois', identifier);
   if (!ok) return;  // URL is broken on the live site — do NOT send
 
-  const { text, link } = buildEmploiMessage(emploi);
-  
-  const titleLog = emploi.titre || emploi.title || 'Unknown Title';
-  console.log(`[TELEGRAM MATCH] Sending title: "${titleLog}" with URL: "${link}"`);
+  // CRITICAL: Build message from the LIVE API record, not the local object.
+  const source = liveRecord || emploi;
+  const { text, link } = buildEmploiMessage(source);
 
-  
+  console.log(`[TELEGRAM MATCH] Sending title: "${source.titre}" with URL: "${link}"`);
+
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
 }
