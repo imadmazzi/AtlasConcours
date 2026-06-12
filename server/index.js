@@ -351,6 +351,7 @@ app.get('/admin/emplois.html', (req, res) => res.redirect(301, '/admin/emplois')
 
 // SPA Fallback: Servir index.html pour toutes les autres routes (React Router)
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
