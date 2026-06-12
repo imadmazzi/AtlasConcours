@@ -14,7 +14,8 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 const IS_VERCEL      = !!process.env.VERCEL;
 const ITEM_LIMIT     = IS_VERCEL ? 10 : 50;   // max items per source per run
 const MAX_PAGES      = IS_VERCEL ? 3  : 8;    // max pages to scrape per source
-const FETCH_TIMEOUT  = 20000;
+const FETCH_TIMEOUT  = Number(process.env.SCRAPER_FETCH_TIMEOUT_MS) || 20000;
+const AI_REWRITE_TIMEOUT = Number(process.env.SCRAPER_AI_TIMEOUT_MS) || 15000;
 const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
 const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
 const BATCH_DELAY    = IS_VERCEL ? 0   : 2000; // inter-batch sleep (ms)
@@ -93,6 +94,17 @@ function buildScraperRequest(url, options = {}) {
 async function scraperGet(url, options = {}) {
   const request = buildScraperRequest(url, options);
   return axios.get(request.url, request.config);
+}
+
+function withTimeout(promise, timeoutMs, label) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timeoutId));
 }
 
 function normalizeEmploiPublicUrl(rawHref, expectedKind, preferredLang = 'fr') {
@@ -331,7 +343,11 @@ async function rewriteBatch(items, type = "concours") {
   `;
 
   try {
-    const result = await model.generateContent(prompt);
+    const result = await withTimeout(
+      model.generateContent(prompt),
+      AI_REWRITE_TIMEOUT,
+      'Gemini rewrite request'
+    );
     const text = result.response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const results = JSON.parse(jsonStr);

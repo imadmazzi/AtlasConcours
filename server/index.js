@@ -16,6 +16,20 @@ const dbReady = db.init().catch(err => {
 // Automatisation (Scraper)
 const { initAutomation } = require('./automation');
 
+let cronRouteActiveRun = null;
+let cronRouteActiveRunStartedAt = null;
+
+function cronLog(message, level = 'log') {
+  const line = `${new Date().toISOString()} [CRON AUTOMATION] ${message}`;
+  if (level === 'error') {
+    console.error(line);
+  } else if (level === 'warn') {
+    console.warn(line);
+  } else {
+    console.log(line);
+  }
+}
+
 // Middleware
 app.use(compression());
 app.use(cors());
@@ -188,34 +202,60 @@ app.post('/api/admin/push-scrape', async (req, res) => {
 // or once with no param to run all sequentially.
 app.get('/api/cron-scraper', async (req, res) => {
   const startMs = Date.now();
-  console.log('⏰ [Vercel Cron] Triggered cron-scraper route...');
-  const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
   const source = (req.query.source || 'all').toLowerCase();
   const force = req.query.force === 'true';
+  cronLog(`Vercel cron route woke up at ${new Date().toISOString()} (source=${source}, force=${force}).`);
 
+  if (cronRouteActiveRun) {
+    const activeForMs = startMs - cronRouteActiveRunStartedAt;
+    cronLog(`Skipping Vercel cron run because another scraper run has been active for ${activeForMs}ms.`, 'warn');
+    return res.status(202).json({
+      status: 'skipped',
+      reason: 'scraper pipeline already running',
+      activeForMs,
+      source,
+    });
+  }
+
+  const { runAnapecScraper, runJobScraper, runScraper } = require('./scraper');
   const results = {};
+  cronRouteActiveRunStartedAt = startMs;
+  cronRouteActiveRun = true;
+
   try {
     if (db.storageMode !== 'mongodb') {
       throw new Error(`Production scraper requires MongoDB persistence. Active storage mode: ${db.storageMode}`);
     }
 
     if (source === 'anapec' || source === 'all') {
+      cronLog('Starting Vercel anapec scraper.');
       results.anapec = await runAnapecScraper(force);
+      cronLog(`Finished Vercel anapec scraper: ${JSON.stringify(results.anapec)}`);
     }
     if (source === 'jobs' || source === 'all') {
+      cronLog('Starting Vercel jobs scraper.');
       results.jobs = await runJobScraper(force);
+      cronLog(`Finished Vercel jobs scraper: ${JSON.stringify(results.jobs)}`);
     }
     if (source === 'concours' || source === 'all') {
+      cronLog('Starting Vercel concours scraper.');
       results.concours = await runScraper(force);
+      cronLog(`Finished Vercel concours scraper: ${JSON.stringify(results.concours)}`);
+    }
+    if (!['anapec', 'jobs', 'concours', 'all'].includes(source)) {
+      throw new Error(`Unknown scraper source "${source}".`);
     }
     await db.flush();
   } catch (err) {
-    console.error('❌ [Vercel Cron] Scraper error:', err.message);
+    cronLog(`Vercel cron scraper error: ${err.stack || err.message}`, 'error');
     results.error = err.message;
+  } finally {
+    cronRouteActiveRun = null;
+    cronRouteActiveRunStartedAt = null;
   }
 
   const durationMs = Date.now() - startMs;
-  console.log(`⏰ [Vercel Cron] Completed in ${durationMs}ms`);
+  cronLog(`Vercel cron route completed in ${durationMs}ms (source=${source}).`);
 
   res.status(results.error ? 500 : 200).json({
     status: results.error ? 'error' : 'success',
