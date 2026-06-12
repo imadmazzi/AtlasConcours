@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
         concours: totalConcours,
         emplois: totalEmplois,
         articles: totalArticles,
-        vues: totalVuesConcours + totalVuesArticles
+        vues: Math.max(100000, totalVuesConcours + totalVuesArticles)
       },
       concoursByMonth,
       topConcours,
