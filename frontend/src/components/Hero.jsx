@@ -77,7 +77,7 @@ export default function Hero() {
           <span className="stat-label">Articles</span>
         </div>
         <div className="stat-item">
-          <span className="stat-num">+100k</span>
+          <span className="stat-num">+100K</span>
           <span className="stat-label">Visiteurs/mois</span>
         </div>
       </div>
