@@ -11,6 +11,8 @@ const SCRAPER_SOURCES = {
   jobs: runJobScraper,
   concours: runScraper,
 };
+const LOCAL_HOURLY_CRON = process.env.LOCAL_HOURLY_CRON_SCHEDULE || '0 * * * *';
+const DAILY_CRON = process.env.DAILY_CRON_SCHEDULE || '0 0 * * *';
 
 let activePipeline = null;
 let activePipelineStartedAt = null;
@@ -112,7 +114,7 @@ function initAutomation() {
   try {
     logAutomation('Initializing cron scheduler.');
 
-    cron.schedule('0 * * * *', () => {
+    cron.schedule(LOCAL_HOURLY_CRON, () => {
       logAutomation(`Hourly cron woke up at ${timestamp()}.`);
       triggerAutomatedScraperPipeline({
         trigger: 'hourly-cron',
@@ -120,7 +122,7 @@ function initAutomation() {
       });
     });
 
-    cron.schedule('0 3 * * *', () => {
+    cron.schedule(DAILY_CRON, () => {
       logAutomation(`Daily safety cron woke up at ${timestamp()}.`);
       triggerAutomatedScraperPipeline({
         trigger: 'daily-safety-cron',
@@ -136,7 +138,7 @@ function initAutomation() {
       });
     }
 
-    logAutomation('Cron scheduler registered: hourly full pipeline at 0 * * * *, daily safety pipeline at 0 3 * * *.');
+    logAutomation(`Cron scheduler registered: local hourly pipeline at ${LOCAL_HOURLY_CRON}, daily safety pipeline at ${DAILY_CRON}. Vercel production uses vercel.json only.`);
   } catch (err) {
     logAutomation(`Cron scheduler failed to initialize: ${err.stack || err.message}`, 'error');
   }
