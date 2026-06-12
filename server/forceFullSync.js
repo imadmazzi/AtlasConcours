@@ -37,7 +37,7 @@ function assertOwnedDocument(type, item, sourceArray) {
     throw new Error(`[TELEGRAM ABORT] ${type} scope mismatch for "${identifier}". The title and identifier do not belong to the same object reference.`);
   }
 
-  console.log(`[TELEGRAM LOCAL VERIFIED] Source object validated: "${title}" owns URL parameter: "${identifier}"`);
+  console.log(`[TELEGRAM VERIFIED] "${title}" perfectly matches link ID: "${identifier}"`);
 }
 
 function assertNoDuplicateIdentifiers(type, rows) {

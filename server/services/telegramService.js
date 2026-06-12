@@ -186,7 +186,7 @@ function assertStrictTelegramMatch(type, item, liveRecord, requestedIdentifier) 
     }
   }
 
-  console.log(`[TELEGRAM VERIFIED] Validated: "${localTitle}" perfectly matches URL parameter: "${identifier}"`);
+  console.log(`[TELEGRAM VERIFIED] "${localTitle}" perfectly matches link ID: "${identifier}"`);
   return true;
 }
 
