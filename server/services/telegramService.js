@@ -126,6 +126,70 @@ async function validateLiveRecord(type, identifier) {
   }
 }
 
+function getItemTitle(item) {
+  return item?.titre || item?.title || '';
+}
+
+function getConcoursIdentifier(item) {
+  return item?.slug || item?._id || item?.id;
+}
+
+function getEmploiIdentifier(item) {
+  return item?._id || item?.id;
+}
+
+function normalizeIdentifier(value) {
+  return value == null ? '' : String(value);
+}
+
+function assertStrictTelegramMatch(type, item, liveRecord, requestedIdentifier) {
+  if (!item || !liveRecord) {
+    throw new Error(`[TELEGRAM ABORT] Missing ${type} item or live record during strict validation.`);
+  }
+
+  const localTitle = getItemTitle(item);
+  const liveTitle = getItemTitle(liveRecord);
+  const identifier = normalizeIdentifier(requestedIdentifier || (type === 'concours' ? getConcoursIdentifier(item) : getEmploiIdentifier(item)));
+
+  if (!localTitle || !liveTitle) {
+    throw new Error(`[TELEGRAM ABORT] ${type} validation failed: missing title for URL parameter "${identifier}".`);
+  }
+
+  if (localTitle !== liveTitle) {
+    throw new Error(`[TELEGRAM ABORT] ${type} title mismatch for URL parameter "${identifier}". Local="${localTitle}" Live="${liveTitle}"`);
+  }
+
+  if (type === 'concours') {
+    const localSlug = normalizeIdentifier(item.slug);
+    const liveSlug = normalizeIdentifier(liveRecord.slug);
+    const localId = normalizeIdentifier(item._id || item.id);
+    const liveId = normalizeIdentifier(liveRecord._id || liveRecord.id);
+
+    if (localSlug && liveSlug && localSlug !== liveSlug) {
+      throw new Error(`[TELEGRAM ABORT] concours slug mismatch. Local="${localSlug}" Live="${liveSlug}"`);
+    }
+    if (localId && liveId && localId !== liveId) {
+      throw new Error(`[TELEGRAM ABORT] concours id mismatch. Local="${localId}" Live="${liveId}"`);
+    }
+    if (identifier !== liveSlug && identifier !== liveId) {
+      throw new Error(`[TELEGRAM ABORT] concours URL parameter "${identifier}" does not resolve to the same live document (live slug="${liveSlug}", live id="${liveId}").`);
+    }
+  } else {
+    const localId = normalizeIdentifier(item._id || item.id);
+    const liveId = normalizeIdentifier(liveRecord._id || liveRecord.id);
+
+    if (!localId || !liveId || localId !== liveId) {
+      throw new Error(`[TELEGRAM ABORT] emploi id mismatch. Local="${localId}" Live="${liveId}"`);
+    }
+    if (identifier !== liveId) {
+      throw new Error(`[TELEGRAM ABORT] emploi URL parameter "${identifier}" does not resolve to the same live document (live id="${liveId}").`);
+    }
+  }
+
+  console.log(`[TELEGRAM VERIFIED] Validated: "${localTitle}" perfectly matches URL parameter: "${identifier}"`);
+  return true;
+}
+
 /**
  * Build the Telegram HTML message for a new concours.
  * Uses the LIVE record from the API to guarantee title/URL/details are consistent.
@@ -263,21 +327,23 @@ async function sendToChannel(text) {
  */
 async function broadcastConcours(concours) {
   // Use the exact object passed to the function
-  const identifier = concours.slug || concours._id || concours.id;
+  const identifier = getConcoursIdentifier(concours);
   if (!identifier) {
-    console.warn('⚠️  [Telegram] Concours has no slug or id — skipping broadcast.');
-    return;
+    throw new Error('[TELEGRAM ABORT] Concours has no slug or id; refusing to broadcast.');
   }
 
   const { ok, liveRecord } = await validateLiveRecord('concours', identifier);
-  if (!ok) return;  // URL is broken on the live site — do NOT send
+  if (!ok) {
+    throw new Error(`[TELEGRAM ABORT] Live concours validation failed for URL parameter "${identifier}".`);
+  }
+
+  assertStrictTelegramMatch('concours', concours, liveRecord, identifier);
 
   // CRITICAL: Build message from the LIVE API record, not the local object.
   // This guarantees the Telegram message text matches the page the user will see.
-  const source = liveRecord || concours;
-  const { text, link } = buildConcoursMessage(source);
+  const { text, link } = buildConcoursMessage(liveRecord);
 
-  console.log(`[TELEGRAM MATCH] Sending title: "${source.titre}" with URL: "${link}"`);
+  console.log(`[TELEGRAM MATCH] Sending title: "${liveRecord.titre}" with URL: "${link}"`);
 
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
@@ -292,23 +358,25 @@ async function broadcastConcours(concours) {
  */
 async function broadcastEmploi(emploi) {
   // Use the exact object passed to the function
-  const identifier = emploi._id || emploi.id;
+  const identifier = getEmploiIdentifier(emploi);
   if (!identifier) {
-    console.warn('⚠️  [Telegram] Emploi has no id — skipping broadcast.');
-    return;
+    throw new Error('[TELEGRAM ABORT] Emploi has no id; refusing to broadcast.');
   }
 
   const { ok, liveRecord } = await validateLiveRecord('emplois', identifier);
-  if (!ok) return;  // URL is broken on the live site — do NOT send
+  if (!ok) {
+    throw new Error(`[TELEGRAM ABORT] Live emploi validation failed for URL parameter "${identifier}".`);
+  }
+
+  assertStrictTelegramMatch('emplois', emploi, liveRecord, identifier);
 
   // CRITICAL: Build message from the LIVE API record, not the local object.
-  const source = liveRecord || emploi;
-  const { text, link } = buildEmploiMessage(source);
+  const { text, link } = buildEmploiMessage(liveRecord);
 
-  console.log(`[TELEGRAM MATCH] Sending title: "${source.titre}" with URL: "${link}"`);
+  console.log(`[TELEGRAM MATCH] Sending title: "${liveRecord.titre}" with URL: "${link}"`);
 
   await sendToChannel(text);
   await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
-module.exports = { broadcastConcours, broadcastEmploi };
+module.exports = { broadcastConcours, broadcastEmploi, assertStrictTelegramMatch };
