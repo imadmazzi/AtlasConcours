@@ -35,7 +35,16 @@ export default function LatestEmplois() {
               <div className="card-top">
                 <span className="badge badge-administration">{e.organisme || e.categorie || 'Emploi'}</span>
               </div>
-              <h3>{e.titre}</h3>
+              <h3 style={{ display: 'flex', alignItems: 'center' }}>
+                {e.imageUrl ? (
+                  <img src={e.imageUrl} alt="" className="w-10 h-10 object-contain rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, flexShrink: 0 }} />
+                ) : (
+                  <span className="w-10 h-10 rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, color: '#64748b', flexShrink: 0 }}>
+                    <i className="fa fa-briefcase"></i>
+                  </span>
+                )}
+                <span style={{ flex: 1 }}>{e.titre}</span>
+              </h3>
               <p className="card-body">
                 {(e.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
               </p>

@@ -379,11 +379,12 @@ function insertItemNow(item, type) {
   const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
   const safeDeadline    = item.deadline || '';
   const safeUrl         = item.url || '';
+  const safeImageUrl    = item.imageUrl || '';
 
   try {
     if (type === 'concours') {
       const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl);
+      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl, safeImageUrl);
 
       // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
       // Retrieve the freshly created record by its auto-assigned ID so the message
@@ -399,7 +400,7 @@ function insertItemNow(item, type) {
         }
       }
     } else {
-      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl);
+      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl, safeImageUrl);
 
       // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
       const newId = result && result.lastInsertRowid;
@@ -558,12 +559,16 @@ async function runScraper(force = false) {
         if (allNewItems.some(item => item.url === link)) return;
 
         const title = $(el).find('h2').text().trim() || $(el).find('.card-title').text().trim() || 'Concours';
+        let imageUrl = $(el).find('img').attr('src') || '';
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = `${EMPLOI_PUBLIC_BASE}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        }
         let deadline = "";
         $(el).find('div, span, p').each((j, sel) => {
           if ($(sel).text().includes("Limite")) deadline = $(sel).text().split(':')[1]?.trim() || "";
         });
 
-        allNewItems.push({ title, url: link, deadline });
+        allNewItems.push({ title, url: link, deadline, imageUrl });
         pageItemCount++;
       });
 
@@ -636,7 +641,11 @@ async function runJobScraper(force = false) {
         if (!force && existingLinks.has(link)) return;
         if (allNewItems.some(item => item.url === link)) return;
 
-        allNewItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link });
+        let imageUrl = $(el).find('img').attr('src') || '';
+        if (imageUrl && !imageUrl.startsWith('http')) {
+          imageUrl = `${EMPLOI_PUBLIC_BASE}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
+        }
+        allNewItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link, imageUrl });
         pageItemCount++;
       });
 
