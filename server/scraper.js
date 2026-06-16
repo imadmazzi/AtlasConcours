@@ -12,8 +12,8 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 // ─── Serverless-aware constants ─────────────────────────────────────────────
 const IS_VERCEL      = !!process.env.VERCEL;
-const ITEM_LIMIT     = IS_VERCEL ? 10 : 50;   // max items per source per run
-const MAX_PAGES      = IS_VERCEL ? 3  : 8;    // max pages to scrape per source
+const ITEM_LIMIT     = IS_VERCEL ? 50 : 200;   // max items per source per run
+const MAX_PAGES      = IS_VERCEL ? 10 : 10;    // max pages to scrape per source
 const FETCH_TIMEOUT  = Number(process.env.SCRAPER_FETCH_TIMEOUT_MS) || 20000;
 const AI_REWRITE_TIMEOUT = Number(process.env.SCRAPER_AI_TIMEOUT_MS) || 15000;
 const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
