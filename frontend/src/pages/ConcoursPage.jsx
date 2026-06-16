@@ -85,25 +85,49 @@ export default function ConcoursPage() {
           <div className="empty-state"><i className="fa fa-clipboard-list"></i><p>Aucun concours trouvé.</p></div>
         )}
 
-        <div className="cards-grid">
-          {!loading && concours.map(c => (
-            <div key={c.id} className="card">
-              <div className="card-top">
-                <span className={getBadge(c.categorie)}>{c.categorie || 'Général'}</span>
-              </div>
-              <h3>{c.titre}</h3>
-              <p className="card-body">
-                {(c.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
-              </p>
-              <div className="card-footer">
-                <div className="card-date">
-                  <i className="fa fa-calendar"></i> Limite: {formatDate(c.date_limite)}
-                </div>
-                <Link to={`/concours/${c.id}`} className="btn-primary">Lire la suite</Link>
-              </div>
-            </div>
-          ))}
-        </div>
+        {!loading && concours.length > 0 && (
+          <div className="job-table-container">
+            <table className="job-table">
+              <thead>
+                <tr>
+                  <th>Logo</th>
+                  <th>Titre du concours</th>
+                  <th>Catégorie</th>
+                  <th>Date limite</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {concours.map(c => (
+                  <tr key={c.id}>
+                    <td className="px-4 py-3 whitespace-nowrap w-12 text-center" data-label="Logo" style={{ width: 60 }}>
+                      {c.imageUrl ? (
+                        <img src={c.imageUrl} alt="logo" className="w-8 h-8 rounded-full object-contain mx-auto bg-slate-100" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', margin: '0 auto', backgroundColor: '#f1f5f9' }} />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', margin: '0 auto', backgroundColor: '#f1f5f9' }}><i className="fa fa-building text-slate-400 text-xs" style={{ fontSize: 12, color: '#94a3b8' }}></i></div>
+                      )}
+                    </td>
+                    <td data-label="Titre du concours">
+                      <div className="job-title">{c.titre}</div>
+                    </td>
+                    <td data-label="Catégorie">
+                      <span className={getBadge(c.categorie)}>{c.categorie || 'Général'}</span>
+                    </td>
+                    <td data-label="Date limite">
+                      <div className="job-date">
+                        <i className="fa fa-calendar" style={{marginRight: '6px', color: '#6c757d'}}></i>
+                        {formatDate(c.date_limite)}
+                      </div>
+                    </td>
+                    <td data-label="Action" className="action-cell">
+                      <Link to={`/concours/${c.id}`} className="btn-secondary btn-sm">Lire la suite</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </main>
   );
