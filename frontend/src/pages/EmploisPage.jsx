@@ -191,6 +191,7 @@ export default function EmploisPage() {
               <table className="job-table">
                 <thead>
                   <tr>
+                    <th>Logo</th>
                     <th>Titre de l'offre</th>
                     <th>Date de publication</th>
                     <th>Organisme / Entreprise</th>
@@ -201,6 +202,13 @@ export default function EmploisPage() {
                 <tbody>
                   {currentItems.map(e => (
                     <tr key={e.id} onClick={() => navigate(`/jobs/${e.id}`)}>
+                      <td className="px-4 py-3 whitespace-nowrap w-12 text-center" data-label="Logo" style={{ width: 60 }}>
+                        {e.imageUrl ? (
+                          <img src={e.imageUrl} alt="logo" className="w-8 h-8 rounded-full object-contain mx-auto bg-slate-100" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', margin: '0 auto', backgroundColor: '#f1f5f9' }} />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', margin: '0 auto', backgroundColor: '#f1f5f9' }}><i className="fa fa-building text-slate-400 text-xs" style={{ fontSize: 12, color: '#94a3b8' }}></i></div>
+                        )}
+                      </td>
                       <td data-label="Titre de l'offre">
                         <div className="job-title">{e.titre}</div>
                       </td>
