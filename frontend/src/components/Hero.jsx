@@ -23,6 +23,7 @@ export default function Hero() {
 
   return (
     <section className="hero">
+      <div style={{ position: 'relative', zIndex: 1 }}>
       <div className="hero-badge">
         <i className="fa fa-star"></i>
         N°1 des Concours Publics au Maroc
@@ -80,6 +81,7 @@ export default function Hero() {
           <span className="stat-num">+100K</span>
           <span className="stat-label">Visiteurs</span>
         </div>
+      </div>
       </div>
     </section>
   );
