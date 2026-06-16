@@ -459,6 +459,19 @@ function extractCleanHtml($) {
   return html.trim();
 }
 
+async function downloadBase64Image(url) {
+  if (!url) return '';
+  try {
+    const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 5000, httpsAgent, headers: { 'User-Agent': 'Mozilla/5.0' } });
+    const buffer = Buffer.from(res.data, 'binary');
+    const mime = res.headers['content-type'] || 'image/jpeg';
+    return `data:${mime};base64,${buffer.toString('base64')}`;
+  } catch (err) {
+    console.warn(`⚠️ Failed to fetch image ${url}:`, err.message);
+    return url;
+  }
+}
+
 /**
  * Pipeline de traitement — insère chaque item immédiatement après rewrite.
  */
@@ -479,6 +492,10 @@ async function processPipeline(items, type) {
       item.description = "Détails non disponibles.";
     }
 
+    if (item.imageUrl && item.imageUrl.startsWith('http')) {
+      item.imageUrl = await downloadBase64Image(item.imageUrl);
+    }
+
     // 2. Collect a micro-batch for AI rewrite (1 on Vercel, up to REWRITE_BATCH locally)
     const microBatch = [item];
     while (microBatch.length < REWRITE_BATCH && i + 1 < items.length) {
@@ -490,6 +507,9 @@ async function processPipeline(items, type) {
         next.description = extractCleanHtml($);
       } catch (err) {
         next.description = "Détails non disponibles.";
+      }
+      if (next.imageUrl && next.imageUrl.startsWith('http')) {
+        next.imageUrl = await downloadBase64Image(next.imageUrl);
       }
       microBatch.push(next);
     }

@@ -203,9 +203,13 @@ export default function EmploisPage() {
                   {currentItems.map(e => (
                     <tr key={e.id} onClick={() => navigate(`/jobs/${e.id}`)}>
                       <td className="px-4 py-3 whitespace-nowrap w-12 text-center" data-label="Logo" style={{ width: 60 }}>
-                        <div className="w-10 h-10 rounded-md flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 8, margin: '0 auto', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
-                          <i className="fa fa-briefcase text-green-600 text-lg" style={{ fontSize: 18, color: '#16a34a' }}></i>
-                        </div>
+                        {e.imageUrl ? (
+                          <img src={e.imageUrl} alt="logo" className="w-8 h-8 rounded-full object-contain mx-auto bg-slate-100" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', margin: '0 auto', backgroundColor: '#f1f5f9' }} />
+                        ) : (
+                          <div className="w-10 h-10 rounded-md flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 8, margin: '0 auto', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}>
+                            <i className="fa fa-briefcase text-green-600 text-lg" style={{ fontSize: 18, color: '#16a34a' }}></i>
+                          </div>
+                        )}
                       </td>
                       <td data-label="Titre de l'offre">
                         <div className="job-title">{e.titre}</div>
