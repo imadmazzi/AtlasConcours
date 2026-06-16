@@ -36,13 +36,9 @@ export default function LatestEmplois() {
                 <span className="badge badge-administration">{e.organisme || e.categorie || 'Emploi'}</span>
               </div>
               <h3 style={{ display: 'flex', alignItems: 'center' }}>
-                {e.imageUrl ? (
-                  <img src={e.imageUrl} alt="" className="w-10 h-10 object-contain rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, flexShrink: 0 }} />
-                ) : (
-                  <span className="w-10 h-10 rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, color: '#64748b', flexShrink: 0 }}>
-                    <i className="fa fa-briefcase"></i>
-                  </span>
-                )}
+                <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 8, backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', marginRight: 12, flexShrink: 0 }}>
+                  <i className="fa fa-briefcase text-green-600 text-lg" style={{ fontSize: 18, color: '#16a34a' }}></i>
+                </div>
                 <span style={{ flex: 1 }}>{e.titre}</span>
               </h3>
               <p className="card-body">

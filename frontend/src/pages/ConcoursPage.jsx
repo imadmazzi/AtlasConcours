@@ -101,11 +101,9 @@ export default function ConcoursPage() {
                 {concours.map(c => (
                   <tr key={c.id}>
                     <td className="px-4 py-3 whitespace-nowrap w-12 text-center" data-label="Logo" style={{ width: 60 }}>
-                      {c.imageUrl ? (
-                        <img src={c.imageUrl} alt="logo" className="w-8 h-8 rounded-full object-contain mx-auto bg-slate-100" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'contain', margin: '0 auto', backgroundColor: '#f1f5f9' }} />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', margin: '0 auto', backgroundColor: '#f1f5f9' }}><i className="fa fa-building text-slate-400 text-xs" style={{ fontSize: 12, color: '#94a3b8' }}></i></div>
-                      )}
+                      <div className="w-10 h-10 rounded-md flex items-center justify-center mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 8, margin: '0 auto', backgroundColor: '#eff6ff', border: '1px solid #bfdbfe' }}>
+                        <i className="fa fa-university text-blue-600 text-lg" style={{ fontSize: 18, color: '#2563eb' }}></i>
+                      </div>
                     </td>
                     <td data-label="Titre du concours">
                       <div className="job-title">{c.titre}</div>
