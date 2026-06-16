@@ -76,10 +76,6 @@ export default function Hero() {
           <span className="stat-num">{stats?.totaux?.articles ?? 0}</span>
           <span className="stat-label">Articles</span>
         </div>
-        <div className="stat-item">
-          <span>+100K</span>
-          <span>Visiteurs/mois</span>
-        </div>
       </div>
     </section>
   );
