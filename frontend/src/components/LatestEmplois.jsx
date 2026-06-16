@@ -21,7 +21,7 @@ export default function LatestEmplois() {
   }, []);
 
   return (
-    <section className="section" style={{ background: '#fff', paddingTop: 60, paddingBottom: 60 }}>
+    <section className="section section--dark" style={{ paddingTop: 60, paddingBottom: 60 }}>
       <div className="container">
         <div className="section-header">
           <h2>Offres d'<span className="accent">Emploi</span> Récentes</h2>

@@ -522,12 +522,54 @@ a { text-decoration: none; color: inherit; }
 }
 .section-link:hover { color: var(--primary-dark); }
 
+/* ========== DARK SECTION VARIANT (homepage aurora theme) ========== */
+.section--dark {
+  background: transparent;
+}
+.section--dark .section-header h2 {
+  color: #fff;
+}
+.section--dark .section-header h2 .accent {
+  color: var(--accent);
+}
+.section--dark .section-link {
+  color: rgba(255, 255, 255, 0.6);
+}
+.section--dark .section-link:hover {
+  color: #fff;
+}
+.section--dark .card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+  color: #fff;
+}
+.section--dark .card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(99, 102, 241, 0.35);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255,255,255,0.10);
+  transform: translateY(-5px);
+}
+.section--dark .card h3 { color: #fff; }
+.section--dark .card-body { color: rgba(255, 255, 255, 0.58); }
+.section--dark .card-footer { border-top-color: rgba(255, 255, 255, 0.08); }
+.section--dark .card-date { color: rgba(255, 255, 255, 0.45); }
+.section--dark .loading,
+.section--dark .empty-state { color: rgba(255, 255, 255, 0.45); }
+.section--dark .loading-spinner {
+  border-color: rgba(255,255,255,0.15);
+  border-top-color: var(--primary-light);
+}
+
 /* ========== CARDS GRID ========== */
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 24px;
 }
+
 
 /* ========== CARD ========== */
 .card {

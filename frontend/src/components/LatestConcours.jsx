@@ -28,7 +28,7 @@ export default function LatestConcours() {
   }, []);
 
   return (
-    <section className="section">
+    <section className="section section--dark">
       <div className="container">
         <div className="section-header">
           <h2>Derniers <span className="accent">Concours</span></h2>
