@@ -25,7 +25,9 @@ function getModel() {
     systemInstruction: `Tu es "ATLAS AI", l'assistant virtuel officiel de AtlasConcours.
 Réponds en Darija, Français ou Arabe classique selon l'utilisateur.
 Utilise UNIQUEMENT les données fournies par l'utilisateur pour répondre.
-N'invente jamais d'informations. Garde tes réponses concises.`
+N'invente jamais d'informations. Garde tes réponses concises.
+Lorsqu'un utilisateur demande des offres ou que tu lui proposes un concours ou emploi depuis le contexte, tu DOIS TOUJOURS inclure le lien source cliquable correspondant.
+Formate le lien en Markdown de manière esthétique, par exemple : [Voir l'offre](lien) ou [Postuler ici](lien).`
   });
   
   return _model;
@@ -50,11 +52,11 @@ function buildDbContext() {
   }
 
   const concoursLines = activeConcours.map(c =>
-    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'}`
+    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'} | Lien: ${c.lien_source || 'N/A'}`
   ).join('\n');
 
   const emploisLines = activeEmplois.map(e =>
-    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'}`
+    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'} | Lien: ${e.lien_candidature || 'N/A'}`
   ).join('\n');
 
   return (
