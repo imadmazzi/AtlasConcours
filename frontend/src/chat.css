@@ -2,7 +2,7 @@
 .chat-toggle-btn {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  left: 24px;
   width: 60px;
   height: 60px;
   border-radius: 50%;
@@ -27,7 +27,7 @@
 .chat-widget-container {
   position: fixed;
   bottom: 90px;
-  right: 24px;
+  left: 24px;
   width: 350px;
   height: 500px;
   max-height: calc(100vh - 120px);
