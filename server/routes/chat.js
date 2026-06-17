@@ -85,6 +85,18 @@ router.get('/test', async (req, res) => {
   };
 
   try {
+    // 1. Fetch available models for this specific API key
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listRes.ok) {
+      const data = await listRes.json();
+      diagnostics.availableModels = (data.models || [])
+        .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+        .map(m => m.name.replace('models/', ''));
+    } else {
+      diagnostics.availableModels = `Failed to fetch: ${listRes.status} ${listRes.statusText}`;
+    }
+
+    // 2. Try testing the requested model
     const model = getModel();
     const chat  = model.startChat({ history: [] });
     const result = await chat.sendMessage('Réponds juste "OK" en un seul mot.');
