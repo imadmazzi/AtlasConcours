@@ -46,7 +46,7 @@ export default function LatestBlog() {
                   <i className="fa fa-calendar"></i>
                   {formatDate(a.created_at)}
                 </div>
-                <Link to={`/blog/${a.id}`} className="btn-primary">
+                <Link to={`/blog/${a.slug}`} className="btn-primary">
                   <T fr="Lire la suite" arKey="btn_read_more" />
                 </Link>
               </div>

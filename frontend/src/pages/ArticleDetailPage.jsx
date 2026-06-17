@@ -53,7 +53,7 @@ export default function ArticleDetailPage() {
           <div style={{ marginTop: '40px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
             <h4 style={{ fontSize: '16px', marginBottom: '10px' }}>Mots-clés</h4>
             <div className="card-tags">
-              {article.tags.split(',').map((tag, idx) => (
+              {(article.tags || '').split(',').filter(Boolean).map((tag, idx) => (
                 <span key={idx} className="badge bg-light text-dark" style={{ marginRight: '8px' }}>{tag.trim()}</span>
               ))}
             </div>

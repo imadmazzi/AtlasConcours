@@ -48,7 +48,7 @@ export default function BlogPage() {
                     <Link to={`/blog/${article.slug}`}>{article.titre}</Link>
                   </h2>
                   <div className="card-tags" style={{ marginBottom: '16px' }}>
-                    {article.tags.split(',').map((tag, idx) => (
+                    {(article.tags || '').split(',').filter(Boolean).map((tag, idx) => (
                       <span key={idx} className="badge bg-light text-dark" style={{ marginRight: '6px' }}>{tag.trim()}</span>
                     ))}
                   </div>
