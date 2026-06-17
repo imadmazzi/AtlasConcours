@@ -17,7 +17,7 @@ function getGeminiModel() {
   const genAI = new GoogleGenerativeAI(apiKey);
 
   _model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-pro',
     systemInstruction: `Tu es "ATLAS AI", l'assistant virtuel officiel de la plateforme AtlasConcours.
 Ton rôle est d'aider les utilisateurs à trouver des informations sur les concours publics et les offres d'emploi au Maroc.
 Réponds toujours de manière polie, professionnelle et amicale.
@@ -85,7 +85,8 @@ router.get('/test', async (req, res) => {
 
   try {
     const model = getGeminiModel();
-    const result = await model.generateContent('Réponds juste "OK" en un mot.');
+    const chat = model.startChat({ history: [] });
+    const result = await chat.sendMessage('Réponds juste "OK" en un mot.');
     const text = (await result.response).text();
     diagnostics.geminiTest = text.trim();
   } catch (err) {
