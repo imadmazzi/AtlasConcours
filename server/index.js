@@ -322,6 +322,7 @@ app.use('/api/emplois', require('./routes/emplois'));
 app.use('/api/jobs', require('./routes/emplois'));
 app.use('/api/articles', require('./routes/articles'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/chat', require('./routes/chat'));
 
 // Sitemap dynamique
 app.get('/sitemap.xml', (req, res) => {

@@ -74,6 +74,8 @@ function BlogPage() {
   );
 }
 
+import ChatWidget from './components/ChatWidget';
+
 function App() {
   useEffect(() => { applyRtl(); }, []);
 
@@ -94,6 +96,7 @@ function App() {
         <Route path="/admin/emplois" element={<AdminEmplois />} />
         <Route path="*" element={<Home />} />
       </Routes>
+      <ChatWidget />
       <Footer />
     </BrowserRouter>
   );
