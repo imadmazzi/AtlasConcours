@@ -1,10 +1,10 @@
 /* ========== ATLAS AI CHAT WIDGET ========== */
 .chat-toggle-btn {
   position: fixed;
-  bottom: 24px;
-  left: 24px;
-  width: 60px;
-  height: 60px;
+  bottom: 96px;
+  right: 20px;
+  width: 46px;
+  height: 46px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
   color: white;
@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 20px;
   transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
 }
 
@@ -26,11 +26,11 @@
 
 .chat-widget-container {
   position: fixed;
-  bottom: 90px;
-  left: 24px;
+  bottom: 152px;
+  right: 20px;
   width: 350px;
   height: 500px;
-  max-height: calc(100vh - 120px);
+  max-height: calc(100vh - 180px);
   background: white;
   border-radius: 20px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
@@ -201,10 +201,17 @@
 }
 
 @media (max-width: 480px) {
+  .chat-toggle-btn {
+    bottom: 90px;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+    font-size: 18px;
+  }
   .chat-widget-container {
     width: calc(100vw - 32px);
     right: 16px;
-    bottom: 80px;
+    bottom: 144px;
     height: 400px;
   }
 }
