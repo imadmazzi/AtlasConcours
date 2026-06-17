@@ -416,7 +416,8 @@ const db = {
       all: (...args) => {
         console.log('ARGS:', args);
         if (query.includes('FROM concours')) {
-          let list = [...this.data.concours];
+          // Only serve active (non-expired) concours — expired ones are silently dropped
+          let list = this.data.concours.filter(c => !isExpired(c.date_limite));
           // args contain params, limit, offset. If there are > 2 args, it means filters are applied.
           if (args.length > 2) {
             const searchParam = args.find(a => typeof a === 'string' && a.startsWith('%'));
@@ -427,29 +428,18 @@ const db = {
           }
           const limit = args[args.length - 2];
           const offset = args[args.length - 1];
-          return list.sort((a,b) => {
-            const aExp = isExpired(a.date_limite);
-            const bExp = isExpired(b.date_limite);
-            if (aExp && !bExp) return 1;
-            if (!aExp && bExp) return -1;
-            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-          }).slice(offset, offset + limit).map(c => {
-             const exp = isExpired(c.date_limite);
-             return {
-                ...c,
-                is_expired: exp,
-                titre: (exp && !(c.titre||'').includes('[Expiré]')) ? `[Expiré] ${c.titre}` : c.titre
-             };
-          });
+          return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+          ).slice(offset, offset + limit);
         }
         if (query.includes('FROM emplois')) {
-          let list = [...this.data.emplois];
+          // Only serve active (non-expired) emplois — expired ones are silently dropped
+          let list = this.data.emplois.filter(e => !isExpired(e.date_limite || e.deadline));
           const stringParams = args.filter(a => typeof a === 'string' && a.startsWith('%'));
           for (const param of stringParams) {
              const term = param.replace(/%/g, '').toLowerCase();
-             list = list.filter(e => 
-               (e.titre && e.titre.toLowerCase().includes(term)) || 
-               (e.entreprise && e.entreprise.toLowerCase().includes(term)) || 
+             list = list.filter(e =>
+               (e.titre && e.titre.toLowerCase().includes(term)) ||
+               (e.entreprise && e.entreprise.toLowerCase().includes(term)) ||
                (e.localisation && e.localisation.toLowerCase().includes(term)) ||
                (e.description && e.description.toLowerCase().includes(term))
              );
@@ -457,35 +447,10 @@ const db = {
           if (query.includes('LIMIT ? OFFSET ?')) {
             const limit = typeof args[args.length - 2] === 'number' ? args[args.length - 2] : 12;
             const offset = typeof args[args.length - 1] === 'number' ? args[args.length - 1] : 0;
-            return list.sort((a,b) => {
-              const aExp = isExpired(a.date_limite || a.deadline);
-              const bExp = isExpired(b.date_limite || b.deadline);
-              if (aExp && !bExp) return 1;
-              if (!aExp && bExp) return -1;
-              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-            }).slice(offset, offset + limit).map(e => {
-               const exp = isExpired(e.date_limite || e.deadline);
-               return {
-                  ...e,
-                  is_expired: exp,
-                  titre: (exp && !(e.titre||'').includes('[Expiré]')) ? `[Expiré] ${e.titre}` : e.titre
-               };
-            });
+            return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)
+            ).slice(offset, offset + limit);
           }
-          return list.sort((a,b) => {
-              const aExp = isExpired(a.date_limite || a.deadline);
-              const bExp = isExpired(b.date_limite || b.deadline);
-              if (aExp && !bExp) return 1;
-              if (!aExp && bExp) return -1;
-              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-          }).map(e => {
-             const exp = isExpired(e.date_limite || e.deadline);
-             return {
-                ...e,
-                is_expired: exp,
-                titre: (exp && !(e.titre||'').includes('[Expiré]')) ? `[Expiré] ${e.titre}` : e.titre
-             };
-          });
+          return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         }
       },
       get: (...args) => {
@@ -498,9 +463,9 @@ const db = {
         if (query.includes('FROM articles WHERE slug')) return this.data.articles.find(a => a.slug === args[0]);
         if (query.includes('FROM articles WHERE id')) return this.data.articles.find(a => a.id == args[0]);
         
-        if (query.includes('COUNT(*) as total FROM concours')) return { total: this.data.concours.length };
-        if (query.includes('COUNT(*) as count FROM concours')) return { count: this.data.concours.length };
-        if (query.includes('COUNT(*) as count FROM emplois')) return { count: this.data.emplois.length };
+        if (query.includes('COUNT(*) as total FROM concours')) return { total: this.data.concours.filter(c => !isExpired(c.date_limite)).length };
+        if (query.includes('COUNT(*) as count FROM concours')) return { count: this.data.concours.filter(c => !isExpired(c.date_limite)).length };
+        if (query.includes('COUNT(*) as count FROM emplois')) return { count: this.data.emplois.filter(e => !isExpired(e.date_limite || e.deadline)).length };
         if (query.includes('COUNT(*) as count FROM articles')) return { count: this.data.articles.length };
         if (query.includes('SUM(vues) as total FROM concours')) return { total: this.data.concours.reduce((s, c) => s + c.vues, 0) };
         if (query.includes('SUM(vues) as total FROM articles')) return { total: this.data.articles.reduce((s, a) => s + a.vues, 0) };

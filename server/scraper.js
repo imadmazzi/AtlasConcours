@@ -5,6 +5,7 @@ const db = require('./db');
 const slugify = require('slugify');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { broadcastConcours, broadcastEmploi } = require('./services/telegramService');
+const { isExpired, parseDateLimite } = require('./utils/dateParser');
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "VOTRE_CLE_API");
@@ -381,6 +382,13 @@ function insertItemNow(item, type) {
   const safeUrl         = item.url || '';
   const safeImageUrl    = item.imageUrl || '';
 
+  // ── Hard expiry guard ────────────────────────────────────────────────────
+  // Never insert an already-expired listing, regardless of how it got here.
+  if (safeDeadline && isExpired(safeDeadline)) {
+    console.warn(`  ⏭️  Skipping EXPIRED ${type}: "${safeTitle.substring(0, 60)}" (deadline: ${safeDeadline})`);
+    return false;
+  }
+
   try {
     if (type === 'concours') {
       const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
@@ -588,6 +596,12 @@ async function runScraper(force = false) {
           if ($(sel).text().includes("Limite")) deadline = $(sel).text().split(':')[1]?.trim() || "";
         });
 
+        // ── Skip expired concours immediately at scrape time ─────────────
+        if (deadline && isExpired(deadline)) {
+          console.log(`  ⏭️  Skipping expired concours: "${title.substring(0, 60)}" (deadline: ${deadline})`);
+          return;
+        }
+
         allNewItems.push({ title, url: link, deadline, imageUrl });
         pageItemCount++;
       });
@@ -665,7 +679,16 @@ async function runJobScraper(force = false) {
         if (imageUrl && !imageUrl.startsWith('http')) {
           imageUrl = `${EMPLOI_PUBLIC_BASE}${imageUrl.startsWith('/') ? '' : '/'}${imageUrl}`;
         }
-        allNewItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link, imageUrl });
+        // Extract deadline from card if present and skip expired emplois
+        let jobDeadline = "";
+        $(el).find('div, span, p').each((j, sel) => {
+          if ($(sel).text().includes("Limite")) jobDeadline = $(sel).text().split(':')[1]?.trim() || "";
+        });
+        if (jobDeadline && isExpired(jobDeadline)) {
+          console.log(`  ⏭️  Skipping expired emploi: "${$(el).find('h2').text().trim().substring(0, 60)}" (deadline: ${jobDeadline})`);
+          return;
+        }
+        allNewItems.push({ title: $(el).find('h2').text().trim() || 'Emploi', url: link, deadline: jobDeadline, imageUrl });
         pageItemCount++;
       });
 

@@ -104,12 +104,29 @@ function authorizePush(req) {
 
 function normalizePushedListings(rows, type) {
   const { sanitizeDescription } = require('./maintenance-sanitize-descriptions');
+  const { isExpired, stripExpiredPrefix } = require('./utils/dateParser');
 
-  return rows.map((row, index) => {
+  return rows
+    .filter(row => {
+      // Drop expired items before they reach the database
+      const deadline = String(row.date_limite || row.deadline || '').trim();
+      if (isExpired(deadline)) {
+        console.warn(`  ⏭️  push-scrape: dropping expired item "${String(row.titre || row.title || '').substring(0, 60)}" (deadline: ${deadline})`);
+        return false;
+      }
+      // Drop items whose title is already poisoned with [Expiré]
+      const title = String(row.titre || row.title || '');
+      if (title.includes('[Expir')) {
+        console.warn(`  ⏭️  push-scrape: dropping [Expiré]-titled item "${title.substring(0, 60)}"`);
+        return false;
+      }
+      return true;
+    })
+    .map((row, index) => {
     if (type === 'concours') {
       return {
         id: Number(row.id) || index + 1,
-        titre: String(row.titre || row.title || 'Concours').trim(),
+        titre: stripExpiredPrefix(String(row.titre || row.title || 'Concours')).trim(),
         slug: String(row.slug || `concours-${Date.now()}-${index + 1}`).trim(),
         description: sanitizeDescription(row.description || ''),
         categorie: String(row.categorie || row.category || 'Concours').trim(),
@@ -122,7 +139,7 @@ function normalizePushedListings(rows, type) {
 
     return {
       id: Number(row.id) || index + 1,
-      titre: String(row.titre || row.title || 'Offre d’emploi').trim(),
+      titre: stripExpiredPrefix(String(row.titre || row.title || "Offre d'emploi")).trim(),
       entreprise: String(row.entreprise || row.enterprise || 'Administration').trim(),
       localisation: String(row.localisation || row.location || 'Maroc').trim(),
       description: sanitizeDescription(row.description || ''),
