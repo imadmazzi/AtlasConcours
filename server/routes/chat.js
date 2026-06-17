@@ -21,7 +21,7 @@ function getModel() {
   if (_model) return _model;
   
   _model = getGenAI().getGenerativeModel({
-    model: 'gemini-3.5-flash',
+    model: 'gemini-2.5-flash',
     systemInstruction: `Tu es "ATLAS AI", l'assistant virtuel officiel de AtlasConcours.
 Réponds en Darija, Français ou Arabe classique selon l'utilisateur.
 Utilise UNIQUEMENT les données fournies par l'utilisateur pour répondre.
@@ -72,7 +72,7 @@ router.get('/test', async (req, res) => {
     apiKeySet: !!apiKey && apiKey !== 'VOTRE_CLE_API',
     apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : '(empty)',
     nodeEnv: process.env.NODE_ENV || 'not set',
-    model: 'gemini-3.5-flash',
+    model: 'gemini-2.5-flash',
     sdkVersion: (() => {
       try { return require('@google/generative-ai/package.json').version; } catch { return 'unknown'; }
     })(),
