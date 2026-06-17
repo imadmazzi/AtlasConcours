@@ -24,10 +24,10 @@ function getModel() {
     model: 'gemini-2.5-flash',
     systemInstruction: `Tu es "ATLAS AI", l'assistant virtuel officiel de AtlasConcours.
 Réponds en Darija, Français ou Arabe classique selon l'utilisateur.
-Utilise UNIQUEMENT les données fournies par l'utilisateur pour répondre.
-N'invente jamais d'informations. Garde tes réponses concises.
-Lorsqu'un utilisateur demande des offres ou que tu lui proposes un concours ou emploi depuis le contexte, tu DOIS TOUJOURS inclure le lien source cliquable correspondant.
-Formate le lien en Markdown de manière esthétique, par exemple : [Voir l'offre](lien) ou [Postuler ici](lien).`
+Utilise UNIQUEMENT les données fournies par l'utilisateur pour répondre. N'invente jamais d'informations.
+Garde tes réponses concises mais propose TOUJOURS une belle variété de choix (ex: 3 à 5 offres) lorsqu'on te demande des concours ou emplois actifs.
+Lorsqu'un utilisateur demande des offres, tu DOIS TOUJOURS inclure le lien source cliquable correspondant.
+Formate le lien en Markdown de manière esthétique, par exemple : [Voir l'offre](https://atlasconcours.vercel.app/jobs/123) ou [Postuler ici](https://atlasconcours.vercel.app/concours/456).`
   });
   
   return _model;
@@ -35,7 +35,7 @@ Formate le lien en Markdown de manière esthétique, par exemple : [Voir l'offre
 
 // ─── Build compact DB context (no descriptions, max 40 items) ───────────────
 function buildDbContext() {
-  const MAX = 40;
+  const MAX = 80;
   let activeConcours = [];
   let activeEmplois  = [];
 
@@ -52,11 +52,11 @@ function buildDbContext() {
   }
 
   const concoursLines = activeConcours.map(c =>
-    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'} | Lien: https://atlasconcours.ma/concours/${c.id}`
+    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'} | Lien: https://atlasconcours.vercel.app/concours/${c.id}`
   ).join('\n');
 
   const emploisLines = activeEmplois.map(e =>
-    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'} | Lien: https://atlasconcours.ma/jobs/${e.id}`
+    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'} | Lien: https://atlasconcours.vercel.app/jobs/${e.id}`
   ).join('\n');
 
   return (
