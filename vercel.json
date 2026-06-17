@@ -5,8 +5,16 @@
   "outputDirectory": "dist",
   "crons": [
     {
-      "path": "/api/cron-scraper",
-      "schedule": "0 0 * * *"
+      "path": "/api/cron-scraper?source=anapec",
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron-scraper?source=jobs",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron-scraper?source=concours",
+      "schedule": "0 4 * * *"
     }
   ],
   "functions": {
