@@ -20,7 +20,7 @@ function getGenAI() {
 
 function getModel() {
   // gemini-pro = gemini-1.0-pro, universally available for all AIzaSy... keys
-  return getGenAI().getGenerativeModel({ model: 'gemini-pro' });
+  return getGenAI().getGenerativeModel({ model: 'gemini-1.0-pro' });
 }
 
 // ─── Build compact DB context (no descriptions, max 40 items) ───────────────
@@ -64,7 +64,7 @@ router.get('/test', async (req, res) => {
     apiKeySet: !!apiKey && apiKey !== 'VOTRE_CLE_API',
     apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : '(empty)',
     nodeEnv: process.env.NODE_ENV || 'not set',
-    model: 'gemini-pro',
+    model: 'gemini-1.0-pro',
     sdkVersion: (() => {
       try { return require('@google/generative-ai/package.json').version; } catch { return 'unknown'; }
     })(),
