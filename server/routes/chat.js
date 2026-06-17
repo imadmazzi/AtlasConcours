@@ -52,11 +52,11 @@ function buildDbContext() {
   }
 
   const concoursLines = activeConcours.map(c =>
-    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'} | Lien: ${c.lien_source || 'N/A'}`
+    `• [Concours] ${c.titre} | Catégorie: ${c.categorie || 'N/A'} | Date limite: ${c.date_limite || 'Non précisée'} | Lien: https://atlasconcours.ma/concours/${c.id}`
   ).join('\n');
 
   const emploisLines = activeEmplois.map(e =>
-    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'} | Lien: ${e.lien_candidature || 'N/A'}`
+    `• [Emploi] ${e.titre} | Entreprise: ${e.entreprise || 'N/A'} | Lieu: ${e.localisation || 'Maroc'} | Date limite: ${e.date_limite || e.deadline || 'Non précisée'} | Lien: https://atlasconcours.ma/jobs/${e.id}`
   ).join('\n');
 
   return (
