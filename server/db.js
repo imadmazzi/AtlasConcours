@@ -452,6 +452,24 @@ const db = {
           }
           return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         }
+        if (query.includes('FROM articles')) {
+          let list = this.data.articles;
+          const stringParams = args.filter(a => typeof a === 'string' && a.startsWith('%'));
+          for (const param of stringParams) {
+             const term = param.replace(/%/g, '').toLowerCase();
+             list = list.filter(a =>
+               (a.titre && a.titre.toLowerCase().includes(term)) ||
+               (a.contenu && a.contenu.toLowerCase().includes(term)) ||
+               (a.tags && a.tags.toLowerCase().includes(term))
+             );
+          }
+          if (query.includes('LIMIT ? OFFSET ?')) {
+            const limit = typeof args[args.length - 2] === 'number' ? args[args.length - 2] : 9;
+            const offset = typeof args[args.length - 1] === 'number' ? args[args.length - 1] : 0;
+            return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0)).slice(offset, offset + limit);
+          }
+          return list.sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        }
       },
       get: (...args) => {
         console.log('ARGS (get):', args);
