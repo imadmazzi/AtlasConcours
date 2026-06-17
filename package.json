@@ -28,7 +28,7 @@
   "author": "AtlasConcours",
   "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/generative-ai": "latest",
     "axios": "^1.16.1",
     "bcryptjs": "^2.4.3",
     "cheerio": "^1.2.0",

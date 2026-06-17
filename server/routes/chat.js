@@ -3,9 +3,8 @@ const router = express.Router();
 const db = require('../db');
 
 // ─── Lazy Gemini Initialization ─────────────────────────────────────────────
-// gemini-pro (v1.0) does NOT support systemInstruction — we inject persona via
-// the first user/model turn in the chat history instead.
 let _genAI = null;
+let _model = null;
 
 function getGenAI() {
   if (_genAI) return _genAI;
@@ -19,8 +18,17 @@ function getGenAI() {
 }
 
 function getModel() {
-  // gemini-pro = gemini-1.0-pro, universally available for all AIzaSy... keys
-  return getGenAI().getGenerativeModel({ model: 'gemini-1.0-pro' });
+  if (_model) return _model;
+  
+  _model = getGenAI().getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    systemInstruction: `Tu es "ATLAS AI", l'assistant virtuel officiel de AtlasConcours.
+Réponds en Darija, Français ou Arabe classique selon l'utilisateur.
+Utilise UNIQUEMENT les données fournies par l'utilisateur pour répondre.
+N'invente jamais d'informations. Garde tes réponses concises.`
+  });
+  
+  return _model;
 }
 
 // ─── Build compact DB context (no descriptions, max 40 items) ───────────────
@@ -64,7 +72,7 @@ router.get('/test', async (req, res) => {
     apiKeySet: !!apiKey && apiKey !== 'VOTRE_CLE_API',
     apiKeyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : '(empty)',
     nodeEnv: process.env.NODE_ENV || 'not set',
-    model: 'gemini-1.0-pro',
+    model: 'gemini-1.5-flash',
     sdkVersion: (() => {
       try { return require('@google/generative-ai/package.json').version; } catch { return 'unknown'; }
     })(),
@@ -89,6 +97,7 @@ router.get('/test', async (req, res) => {
       stack:   err.stack?.split('\n').slice(0, 5),
     };
     _genAI = null; // reset so next request retries
+    _model = null;
   }
 
   res.json(diagnostics);
@@ -106,18 +115,11 @@ router.post('/', async (req, res) => {
     const model      = getModel();
     const dbContext  = buildDbContext();
 
-    // gemini-pro does NOT support systemInstruction parameter.
-    // Inject persona + DB context as the first user/model exchange in history.
     const systemTurn = [
       {
         role: 'user',
         parts: [{
-          text:
-            `Tu es "ATLAS AI", l'assistant virtuel officiel de AtlasConcours. ` +
-            `Réponds en Darija, Français ou Arabe classique selon l'utilisateur. ` +
-            `Utilise UNIQUEMENT les données ci-dessous pour répondre. ` +
-            `N'invente jamais d'informations.\n\n` +
-            dbContext,
+          text: `Voici les données actuelles de AtlasConcours. Utilise-les pour répondre aux questions de l'utilisateur.\n\n${dbContext}`
         }],
       },
       {
@@ -154,6 +156,7 @@ router.post('/', async (req, res) => {
     console.error('═══════════════════════════════════════════════════════');
 
     _genAI = null; // reset so next request retries cleanly
+    _model = null;
 
     return res.status(500).json({
       error:        "Désolé, je rencontre des difficultés techniques. Veuillez réessayer plus tard.",
