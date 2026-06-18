@@ -41,6 +41,19 @@ export default function JobDetailPage() {
   }, [id]);
 
   useEffect(() => {
+    if (job) {
+      document.title = `${job.titre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`;
+      let metaDesc = document.querySelector('meta[name="description"]');
+      if (!metaDesc) {
+        metaDesc = document.createElement('meta');
+        metaDesc.name = "description";
+        document.head.appendChild(metaDesc);
+      }
+      metaDesc.content = `اكتشف تفاصيل وشروط التسجيل في مباراة ${job.titre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`;
+    }
+  }, [job]);
+
+  useEffect(() => {
     setLoading(true);
     setError(false);
     api.get('/emplois/' + id).then(res => {
@@ -205,6 +218,25 @@ export default function JobDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* TAGS & KEYWORDS (SEO) */}
+          <div className="card" style={{ marginTop: '30px', padding: '24px' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--text-muted)' }}>
+              <i className="fa fa-tags" style={{ marginRight: '8px' }}></i>
+              Mots-clés / الكلمات المفتاحية
+            </h3>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              <Link to="/jobs" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>عروض العمل بالمغرب 2026</Link>
+              <Link to="/jobs" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>التوظيف بالمغرب</Link>
+              <Link to="/jobs" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>فرص عمل</Link>
+              {job.categorie && (
+                <Link to="/jobs" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>قطاع {job.categorie}</Link>
+              )}
+              {(job.entreprise || job.organisme) && (
+                <Link to="/jobs" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>{job.entreprise || job.organisme}</Link>
+              )}
             </div>
           </div>
 
