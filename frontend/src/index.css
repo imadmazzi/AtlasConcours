@@ -1282,61 +1282,41 @@ footer {
 }
 
 @media (max-width: 768px) {
-  /* ===========================================================
-     GLOBAL MOBILE TABLE OVERRIDE
-     Targets ALL table elements by tag name so no class mismatch
-     or inline style can prevent this from applying.
-     Desktop (> 768px) is 100% UNTOUCHED.
-     =========================================================== */
-
-  /* Hide Articles Table entirely */
-  .blog-table-mobile-hidden, [class*="blog-table"] {
-    display: none !important;
-  }
-
-  /* Force table decomposition globally on mobile */
-  table, tbody {
-    display: block !important;
-    width: 100% !important;
-  }
-
-  thead {
-    display: none !important;
-  }
-
-  tr {
+  /* 1. Target the grid wrapper holding the top 4 cards and turn it into a horizontal swipe row */
+  .category-grid-wrapper,
+  div:has(> div > img[alt*="Militaire"]),
+  div:has(> div > img[alt*="الأمن"]) {
     display: flex !important;
     flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    max-height: 55px !important;
-    padding: 6px 10px !important;
-    border-bottom: 1px solid #e2e8f0 !important;
-    width: 100% !important;
-    overflow: hidden !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    gap: 12px !important;
+    padding: 12px 8px !important;
+    scroll-behavior: smooth !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* 2. Shrink each card and give them a neat compact fixed width on phone screens */
+  .category-grid-wrapper > div,
+  div:has(> img[alt*="Militaire"]) {
+    flex: 0 0 135px !important;
+    min-width: 135px !important;
+    max-width: 135px !important;
+    padding: 8px !important;
     box-sizing: border-box !important;
   }
 
-  /* Hide columns we don't need on mobile */
-  td:first-child, .mobile-hide, th:first-child {
-    display: none !important;
+  /* 3. Make the image and content inside the 4 cards smaller for small phone screens */
+  .category-grid-wrapper img,
+  div:has(> img[alt*="Militaire"]) img {
+    height: 45px !important;
+    object-fit: contain !important;
   }
-
-  /* Title cell expanding */
-  td:nth-child(2) {
-    flex: 1 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    font-size: 13px !important;
-    padding-right: 8px !important;
-  }
-
-  /* Date and Button cells staying crisp */
-  td:nth-child(3), td:nth-child(4), td:last-child {
-    flex-shrink: 0 !important;
+  
+  .category-grid-wrapper h3,
+  div:has(> img[alt*="Militaire"]) h3 {
     font-size: 12px !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
   }
 }
 
