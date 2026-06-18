@@ -1319,22 +1319,36 @@ footer {
     white-space: normal !important;
   }
 
-  /* 4. Hero Stats Cards: swipeable row on mobile */
+  /* 4. Hero Stats Cards: 3-column grid to fit all 3 on screen */
   .hero-stats {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    gap: 12px !important;
-    padding: 12px 4px !important;
-    -webkit-overflow-scrolling: touch !important;
-    justify-content: flex-start !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 8px !important;
+    padding: 12px 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  /* 5. Force each stat card to be a fixed width so they don't stack */
+  /* 5. Scale down the cards to fit perfectly in 3 columns */
   .hero-stats .stat-item {
-    flex: 0 0 280px !important;
-    min-width: 280px !important;
+    min-width: 0 !important; /* Override the 150px min-width from desktop */
+    padding: 12px 8px !important; /* Smaller padding */
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 12px !important;
+  }
+  
+  .hero-stats .stat-item .stat-num {
+    font-size: 16px !important; /* Scaled down number */
+  }
+
+  .hero-stats .stat-item .stat-label {
+    font-size: 10px !important; /* Scaled down label */
+    text-align: center !important;
+    white-space: normal !important;
+    line-height: 1.2 !important;
   }
 
   /* 6. Hide the "Articles" stat card (3rd child) */
