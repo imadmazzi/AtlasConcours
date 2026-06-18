@@ -387,7 +387,96 @@ app.get('/admin/dashboard.html', (req, res) => res.redirect(301, '/admin/dashboa
 app.get('/admin/concours.html', (req, res) => res.redirect(301, '/admin/concours'));
 app.get('/admin/emplois.html', (req, res) => res.redirect(301, '/admin/emplois'));
 
-// SPA Fallback: Servir index.html pour toutes les autres routes (React Router)
+// SPA Fallback with server-side SEO meta injection for detail pages
+// This ensures Google bot sees correct title/description without JS execution.
+const fs = require('fs');
+
+function serveWithMeta(res, meta) {
+  const indexPath = path.join(__dirname, '../public/index.html');
+  let html;
+  try {
+    html = fs.readFileSync(indexPath, 'utf-8');
+  } catch (e) {
+    return res.status(500).send('Could not read index.html');
+  }
+
+  const title = (meta.title || 'AtlasConcours').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const description = (meta.description || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const url = meta.url || 'https://www.atlasconcours.com';
+
+  // Inject meta tags before </head>
+  const metaTags = `
+    <title>${title}</title>
+    <meta name="description" content="${description}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${description}" />
+    <meta property="og:url" content="${url}" />
+    <meta property="og:type" content="website" />
+    <link rel="canonical" href="${url}" />`;
+
+  // Replace the existing <title> and inject our tags, removing the generic ones
+  html = html.replace(/<title>[^<]*<\/title>/, '');
+  html = html.replace('</head>', metaTags + '\n  </head>');
+
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+  res.send(html);
+}
+
+// SSR meta injection: Concours detail page
+app.get('/concours/:id', async (req, res) => {
+  try {
+    const idOrSlug = req.params.id;
+    let concours;
+    if (!isNaN(idOrSlug)) {
+      concours = db.data?.concours?.find(c => String(c.id) === String(idOrSlug));
+    } else {
+      concours = db.data?.concours?.find(c => c.slug === idOrSlug);
+    }
+
+    if (concours) {
+      serveWithMeta(res, {
+        title: `${concours.titre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`,
+        description: `اكتشف تفاصيل وشروط التسجيل في مباراة ${concours.titre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`,
+        url: `https://www.atlasconcours.com/concours/${concours.id}`
+      });
+    } else {
+      // Fallback to generic index.html
+      res.setHeader('Cache-Control', 'no-store');
+      res.sendFile(path.join(__dirname, '../public/index.html'));
+    }
+  } catch (e) {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  }
+});
+
+// SSR meta injection: Job detail page
+app.get('/jobs/:id', async (req, res) => {
+  try {
+    const idOrSlug = req.params.id;
+    let job;
+    if (!isNaN(idOrSlug)) {
+      job = db.data?.emplois?.find(e => String(e.id) === String(idOrSlug));
+    } else {
+      job = db.data?.emplois?.find(e => e.slug === idOrSlug);
+    }
+
+    if (job) {
+      serveWithMeta(res, {
+        title: `${job.titre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`,
+        description: `اكتشف تفاصيل وشروط التسجيل في وظيفة ${job.titre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`,
+        url: `https://www.atlasconcours.com/jobs/${job.id}`
+      });
+    } else {
+      res.setHeader('Cache-Control', 'no-store');
+      res.sendFile(path.join(__dirname, '../public/index.html'));
+    }
+  } catch (e) {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+  }
+});
+
+// Generic SPA Fallback for all other routes
 app.get('*', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.sendFile(path.join(__dirname, '../public/index.html'));
