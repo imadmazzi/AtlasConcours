@@ -41,31 +41,46 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 app.get('/api/sitemap.xml', async (req, res) => {
   res.header('Content-Type', 'application/xml');
-  res.header('Cache-Control', 'public, max-age=3600');
+  res.header('Cache-Control', 'public, max-age=3600, s-maxage=3600');
   
   const baseUrl = 'https://www.atlasconcours.com';
   
   // Base static URLs
   let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
   
-  const staticPages = ['', '/concours', '/emplois', '/blog'];
+  const staticPages = ['', '/concours', '/jobs', '/blog'];
   for (const page of staticPages) {
     xml += `  <url>\n    <loc>${baseUrl}${page}</loc>\n    <changefreq>daily</changefreq>\n    <priority>${page === '' ? '1.0' : '0.8'}</priority>\n  </url>\n`;
   }
   
-  // Dynamic Concours
   const { isExpired } = require('./utils/dateParser');
-  const activeConcours = db.data.concours.filter(c => !isExpired(c.date_limite));
-  for (const c of activeConcours) {
-    if (c.slug) {
-      xml += `  <url>\n    <loc>${baseUrl}/concours/${c.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.7</priority>\n  </url>\n`;
+
+  // Dynamic Concours (by ID)
+  if (db.data.concours) {
+    const activeConcours = db.data.concours.filter(c => !isExpired(c.date_limite));
+    for (const c of activeConcours) {
+      if (c.id) {
+        xml += `  <url>\n    <loc>${baseUrl}/concours/${c.id}</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+      }
+    }
+  }
+
+  // Dynamic Emplois (Jobs) (by ID)
+  if (db.data.emplois) {
+    const activeEmplois = db.data.emplois.filter(e => !isExpired(e.created_at || e.date_limite || e.deadline));
+    for (const e of activeEmplois) {
+      if (e.id) {
+        xml += `  <url>\n    <loc>${baseUrl}/jobs/${e.id}</loc>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n`;
+      }
     }
   }
   
-  // Dynamic Articles
-  for (const a of db.data.articles) {
-    if (a.slug) {
-      xml += `  <url>\n    <loc>${baseUrl}/blog/${a.slug}</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+  // Dynamic Articles (by slug)
+  if (db.data.articles) {
+    for (const a of db.data.articles) {
+      if (a.slug) {
+        xml += `  <url>\n    <loc>${baseUrl}/blog/${a.slug}</loc>\n    <changefreq>weekly</changefreq>\n    <priority>0.6</priority>\n  </url>\n`;
+      }
     }
   }
   
