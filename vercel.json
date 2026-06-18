@@ -24,6 +24,10 @@
   },
   "rewrites": [
     {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap.xml"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/index.js"
     },
