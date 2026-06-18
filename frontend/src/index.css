@@ -1282,41 +1282,20 @@ footer {
 }
 
 @media (max-width: 768px) {
-  .job-table thead {
-    display: none;
-  }
-  .job-table, .job-table tbody, .job-table tr, .job-table td {
-    display: block;
-    width: 100%;
-  }
-  .job-table tr {
-    border-bottom: 8px solid var(--bg);
-    padding: 16px;
-  }
-  .job-table td {
-    border-bottom: none;
-    padding: 8px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    text-align: right;
-  }
-  .job-table td::before {
-    content: attr(data-label);
-    font-weight: 600;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-transform: uppercase;
-    text-align: left;
-    margin-right: 16px;
+  /* Mobile UI Optimization: Keep table inline (single line per row) but make it compact */
+  .job-table th, .job-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+    white-space: nowrap;
   }
   .job-title {
-    text-align: right;
-    font-size: 16px;
+    font-size: 14px;
+    white-space: normal; /* Allow only title to wrap if needed */
+    min-width: 180px;
   }
-  .action-cell {
-    margin-top: 12px;
-    justify-content: flex-end;
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
   }
 }
 
