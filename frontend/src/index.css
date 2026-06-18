@@ -1318,6 +1318,29 @@ footer {
     font-size: 12px !important;
     white-space: normal !important;
   }
+
+  /* 4. Hero Stats Cards: swipeable row on mobile */
+  .hero-stats {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 12px !important;
+    padding: 12px 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    justify-content: flex-start !important;
+  }
+
+  /* 5. Force each stat card to be a fixed width so they don't stack */
+  .hero-stats .stat-item {
+    flex: 0 0 280px !important;
+    min-width: 280px !important;
+  }
+
+  /* 6. Hide the "Articles" stat card (3rd child) */
+  .hero-stats .stat-item:nth-child(3) {
+    display: none !important;
+  }
 }
 
 @media (max-width: 600px) {
