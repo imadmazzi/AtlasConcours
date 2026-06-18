@@ -194,8 +194,8 @@ export default function EmploisPage() {
                     <th>Logo</th>
                     <th>Titre de l'offre</th>
                     <th>Date de publication</th>
-                    <th>Organisme / Entreprise</th>
-                    <th>Lieu de travail</th>
+                    <th className="mobile-hide">Organisme / Entreprise</th>
+                    <th className="mobile-hide">Lieu de travail</th>
                     <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
@@ -220,10 +220,10 @@ export default function EmploisPage() {
                           {formatDate(e.created_at || e.date_limite || e.deadline)}
                         </div>
                       </td>
-                      <td data-label="Organisme / Entreprise">
+                      <td data-label="Organisme / Entreprise" className="mobile-hide">
                         <span className="badge badge-administration">{e.organisme || e.entreprise || e.categorie || 'Administration'}</span>
                       </td>
-                      <td data-label="Lieu de travail">
+                      <td data-label="Lieu de travail" className="mobile-hide">
                         <div className="job-location">
                           <i className="fa fa-map-marker" style={{marginRight: '6px', color: '#6c757d'}}></i>
                           {e.localisation || 'Maroc'}

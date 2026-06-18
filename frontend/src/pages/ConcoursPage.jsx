@@ -92,7 +92,7 @@ export default function ConcoursPage() {
                 <tr>
                   <th>Logo</th>
                   <th>Titre du concours</th>
-                  <th>Catégorie</th>
+                  <th className="mobile-hide">Catégorie</th>
                   <th>Date limite</th>
                   <th style={{ textAlign: 'right' }}>Action</th>
                 </tr>
@@ -112,7 +112,7 @@ export default function ConcoursPage() {
                     <td data-label="Titre du concours">
                       <div className="job-title">{c.titre}</div>
                     </td>
-                    <td data-label="Catégorie">
+                    <td data-label="Catégorie" className="mobile-hide">
                       <span className={getBadge(c.categorie)}>{c.categorie || 'Général'}</span>
                     </td>
                     <td data-label="Date limite">
