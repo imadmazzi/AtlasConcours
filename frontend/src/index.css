@@ -1283,106 +1283,60 @@ footer {
 
 @media (max-width: 768px) {
   /* ===========================================================
-     MOBILE TABLE — TRUE FLEX-ROW LAYOUT
-     The HTML <table> is dissolved into flex rows so each
-     listing occupies ONE tight horizontal line:
-       [Title (flex:1)]  [Date]  [Button]
-     thead is hidden. Logo + secondary cols are removed.
-     Max row height is capped to keep many items on screen.
+     GLOBAL MOBILE TABLE OVERRIDE
+     Targets ALL table elements by tag name so no class mismatch
+     or inline style can prevent this from applying.
      Desktop (> 768px) is 100% UNTOUCHED.
      =========================================================== */
 
-  /* 1. Wrapper: plain block, no horizontal scroll needed */
-  .job-table-container {
-    overflow-x: hidden;
-    border-radius: 8px;
+  /* Hide Articles Table entirely */
+  .blog-table-mobile-hidden, [class*="blog-table"] {
+    display: none !important;
   }
 
-  /* 2. Dissolve table structure into block containers */
-  .job-table,
-  .job-table tbody {
+  /* Force table decomposition globally on mobile */
+  table, tbody {
     display: block !important;
     width: 100% !important;
   }
 
-  /* 3. Hide the header row entirely */
-  .job-table thead {
+  thead {
     display: none !important;
   }
 
-  /* 4. Each <tr> becomes a single horizontal flex row */
-  .job-table tr {
+  tr {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
-    padding: 6px 12px !important;
-    border-bottom: 1px solid var(--border) !important;
-    min-height: 0 !important;
-    max-height: 52px !important;   /* strict height cap */
+    max-height: 55px !important;
+    padding: 6px 10px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    width: 100% !important;
     overflow: hidden !important;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
   }
 
-  /* 5. Every visible <td> becomes a flex item */
-  .job-table td {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    padding: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    font-size: 12px;
-    overflow: hidden;
-  }
-
-  /* 6. Hide Logo (first column) and secondary columns */
-  .job-table td:first-child,
-  .job-table td.mobile-hide {
+  /* Hide columns we don't need on mobile */
+  td:first-child, .mobile-hide, th:first-child {
     display: none !important;
   }
 
-  /* 7. Title cell: takes all available space, truncates with ellipsis */
-  .job-table td:nth-child(2) {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
-    overflow: hidden;
-  }
-
-  .job-title {
-    font-size: 12px !important;
-    font-weight: 700;
+  /* Title cell expanding */
+  td:nth-child(2) {
+    flex: 1 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
-    display: block;
-    max-width: 100%;
+    font-size: 13px !important;
+    padding-right: 8px !important;
   }
 
-  /* 8. Date cell: fixed width, no shrink */
-  .job-date {
-    font-size: 11px !important;
-    white-space: nowrap !important;
-    flex-shrink: 0;
-    color: var(--text-muted);
-  }
-
-  /* 9. Action cell: no shrink, button stays compact */
-  .action-cell {
+  /* Date and Button cells staying crisp */
+  td:nth-child(3), td:nth-child(4), td:last-child {
     flex-shrink: 0 !important;
-    margin: 0 !important;
-  }
-
-  .btn-sm {
-    padding: 4px 10px !important;
-    font-size: 11px !important;
-    white-space: nowrap;
-  }
-
-  /* 10. Hide the blog articles table on mobile */
-  .blog-table-mobile-hidden {
-    display: none !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
   }
 }
 
