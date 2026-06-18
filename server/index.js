@@ -39,7 +39,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Servir les fichiers statiques
 app.use(express.static(path.join(__dirname, '../public')));
 
-app.get('/api/sitemap.xml', async (req, res) => {
+app.get(['/api/sitemap.xml', '/sitemap.xml'], async (req, res) => {
   try {
     res.header('Content-Type', 'application/xml');
     res.header('Cache-Control', 'public, max-age=3600, s-maxage=3600');
