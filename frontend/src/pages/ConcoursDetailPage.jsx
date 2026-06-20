@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api';
+import InlineFAQ, { buildConcoursFAQ } from '../components/InlineFAQ';
 
 const BADGE_MAP = {
   'Sécurité': 'securite', 'Éducation': 'education', 'Santé': 'sante',
@@ -262,6 +263,12 @@ export default function ConcoursDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* CONTEXTUAL FAQ */}
+          <InlineFAQ
+            items={buildConcoursFAQ(concours, { postes, grade, diplome })}
+            title="أسئلة شائعة حول هذه المباراة"
+          />
 
           {/* TAGS & KEYWORDS (SEO) */}
           <div className="card" style={{ marginTop: '30px', padding: '24px' }}>

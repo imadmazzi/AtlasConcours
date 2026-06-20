@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
+import InlineFAQ, { buildJobFAQ } from '../components/InlineFAQ';
 
 function formatDate(d) {
   if (!d || d === 'N/A') return "Consulter l'annonce";
@@ -219,7 +220,14 @@ export default function JobDetailPage() {
                 )}
               </div>
             </div>
+            </div>
           </div>
+
+          {/* CONTEXTUAL FAQ */}
+          <InlineFAQ
+            items={buildJobFAQ(job, extracted)}
+            title="أسئلة شائعة حول هذه الوظيفة"
+          />
 
           {/* TAGS & KEYWORDS (SEO) */}
           <div className="card" style={{ marginTop: '30px', padding: '24px' }}>
