@@ -219,7 +219,9 @@ export default function JobDetailPage() {
                   </div>
                 )}
               </div>
-              {/* CONTEXTUAL FAQ */}
+            </div>
+
+            {/* CONTEXTUAL FAQ */}
             <InlineFAQ
               items={buildJobFAQ(job, extracted)}
               title="أسئلة شائعة حول هذه الوظيفة"

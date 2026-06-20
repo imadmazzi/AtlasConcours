@@ -261,6 +261,8 @@ export default function ConcoursDetailPage() {
                   </div>
                 )}
               </div>
+            </div>
+
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
               items={buildConcoursFAQ(concours, { postes, grade, diplome })}
