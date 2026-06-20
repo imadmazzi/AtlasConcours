@@ -261,31 +261,29 @@ export default function ConcoursDetailPage() {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            {/* CONTEXTUAL FAQ */}
+            <InlineFAQ
+              items={buildConcoursFAQ(concours, { postes, grade, diplome })}
+              title="أسئلة شائعة حول هذه المباراة"
+            />
 
-          {/* CONTEXTUAL FAQ */}
-          <InlineFAQ
-            items={buildConcoursFAQ(concours, { postes, grade, diplome })}
-            title="أسئلة شائعة حول هذه المباراة"
-          />
-
-          {/* TAGS & KEYWORDS (SEO) */}
-          <div className="card" style={{ marginTop: '30px', padding: '24px' }}>
-            <h3 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--text-muted)' }}>
-              <i className="fa fa-tags" style={{ marginRight: '8px' }}></i>
-              Mots-clés / الكلمات المفتاحية
-            </h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>مباريات المغرب 2026</Link>
-              <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>التوظيف بالمغرب</Link>
-              <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>وظيفة عمومية</Link>
-              {concours.categorie && (
-                <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>مباراة {concours.categorie}</Link>
-              )}
-              {organisme && (
-                <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>{organisme}</Link>
-              )}
+            {/* TAGS & KEYWORDS (SEO) */}
+            <div className="card" style={{ marginTop: '30px', padding: '24px' }}>
+              <h3 style={{ fontSize: '16px', marginBottom: '16px', color: 'var(--text-muted)' }}>
+                <i className="fa fa-tags" style={{ marginRight: '8px' }}></i>
+                Mots-clés / الكلمات المفتاحية
+              </h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>مباريات المغرب 2026</Link>
+                <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>التوظيف بالمغرب</Link>
+                <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>وظيفة عمومية</Link>
+                {concours.categorie && (
+                  <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>مباراة {concours.categorie}</Link>
+                )}
+                {organisme && (
+                  <Link to="/concours" className="badge" style={{ background: '#f1f5f9', color: 'var(--text)', border: '1px solid #e2e8f0', textDecoration: 'none' }}>{organisme}</Link>
+                )}
+              </div>
             </div>
           </div>
 
