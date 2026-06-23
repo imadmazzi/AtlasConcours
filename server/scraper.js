@@ -317,28 +317,36 @@ async function rewriteBatch(items, type = "concours") {
         description: item.description,
         summary: item.title + " est disponible.",
         enterprise: item.enterprise || "Administration",
-        location: item.location || "Maroc"
+        location: item.location || "Maroc",
+        postes: "",
+        deadline: "",
+        diplome: "",
+        texte_complet: item.description
       }
     }));
   }
 
   const prompt = `
-    Tu es un expert en rédaction SEO au Maroc. Réécris les éléments suivants en JSON.
-    Chaque élément doit avoir un titre accrocheur, une description HTML propre et un résumé SEO.
+    Tu es un expert en rédaction SEO et extraction de données RH au Maroc. 
+    Pour chaque élément fourni, extrais les informations clés et réécris le texte.
     
-    Type: ${type === 'job' ? "Offres d'emploi" : "Concours"}
+    Type: ${type === 'job' ? "Offres d'emploi" : "Concours de recrutement"}
     
-    Données à traiter:
+    Données à traiter (JSON Array):
     ${JSON.stringify(items.map(it => ({ t: it.title, d: it.description })))}
     
-    Format de réponse (JSON Array uniquement):
+    Format de réponse OBLIGATOIRE (JSON Array uniquement, sans markdown supplémentaire):
     [
       {
-        "title": "...",
-        "description": "...",
-        "summary": "...",
-        "enterprise": "...",
-        "location": "..."
+        "title": "Titre accrocheur et professionnel",
+        "description": "Un court résumé SEO de 2 phrases maximum",
+        "summary": "Résumé très bref de l'offre",
+        "enterprise": "Nom de l'entreprise ou organisme (si pertinent)",
+        "location": "Lieu de travail ou ville",
+        "postes": "Nombre de postes exact (ex: '20' ou 'Non spécifié')",
+        "deadline": "Date limite de candidature formatée (ex: '30 Juin 2026' ou 'Non spécifié')",
+        "diplome": "Diplômes, formations ou conditions exigées (Bref résumé)",
+        "texte_complet": "Le texte complet et détaillé de l'annonce, structuré de façon lisible et professionnelle avec du HTML sémantique propre (<ul>, <li>, <strong>, <h3>) sans balises <html> ni <body>."
       }
     ]
   `;
@@ -355,7 +363,7 @@ async function rewriteBatch(items, type = "concours") {
     
     return items.map((item, index) => ({
       ...item,
-      rewritten: results[index] || { title: item.title, description: item.description, summary: "", enterprise: "", location: "" }
+      rewritten: results[index] || { title: item.title, description: item.description, summary: "", enterprise: "", location: "", postes: "", deadline: "", diplome: "", texte_complet: item.description }
     }));
   } catch (error) {
     console.error("❌ Erreur Batch IA:", error.message);
@@ -378,9 +386,14 @@ function insertItemNow(item, type) {
   const safeDescription = item.rewritten?.description || item.description || 'Détails non disponibles.';
   const safeEnterprise  = item.rewritten?.enterprise  || item.enterprise  || 'Administration';
   const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
-  const safeDeadline    = item.deadline || '';
+  const safeDeadline    = item.rewritten?.deadline    || item.deadline    || '';
   const safeUrl         = item.url || '';
   const safeImageUrl    = item.imageUrl || '';
+  
+  // New fields
+  const safePostes       = item.rewritten?.postes       || '';
+  const safeDiplome      = item.rewritten?.diplome      || '';
+  const safeTexteComplet = item.rewritten?.texte_complet || item.description || '';
 
   // ── Hard expiry guard ────────────────────────────────────────────────────
   // Never insert an already-expired listing, regardless of how it got here.
@@ -392,7 +405,7 @@ function insertItemNow(item, type) {
   try {
     if (type === 'concours') {
       const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl, safeImageUrl);
+      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl, safeImageUrl, safePostes, safeDiplome, safeTexteComplet, safeLocation);
 
       // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
       // Retrieve the freshly created record by its auto-assigned ID so the message
@@ -408,7 +421,7 @@ function insertItemNow(item, type) {
         }
       }
     } else {
-      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl, safeImageUrl);
+      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl, safeImageUrl, safePostes, safeDiplome, safeDeadline, safeTexteComplet);
 
       // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
       const newId = result && result.lastInsertRowid;

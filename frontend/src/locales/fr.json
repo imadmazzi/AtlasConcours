@@ -1,0 +1,41 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "concours": "Concours",
+    "jobs": "Emplois",
+    "blog": "Blog"
+  },
+  "search": {
+    "placeholder": "Chercher un concours, un ministère...",
+    "button": "Rechercher",
+    "all_categories": "Toutes catégories"
+  },
+  "categories": {
+    "securite": "Sécurité",
+    "education": "Éducation",
+    "sante": "Santé",
+    "justice": "Justice",
+    "ingenierie": "Ingénierie",
+    "administration": "Administration"
+  },
+  "hero": {
+    "badge": "N°1 des Concours Publics au Maroc",
+    "title_start": "Trouvez les derniers",
+    "title_accent": " Concours au Maroc",
+    "desc": "Tous les concours publics, offres d'emploi et conseils carrière en un seul endroit."
+  },
+  "footer": {
+    "about": "À propos",
+    "contact": "Contact",
+    "privacy": "Confidentialité",
+    "terms": "Conditions"
+  },
+  "actions": {
+    "apply": "Postuler",
+    "read_more": "Lire la suite",
+    "view_all": "Voir tout"
+  },
+  "btn_read_more": "Lire la suite",
+  "btn_view_offer": "Voir l'offre",
+  "btn_apply": "Postuler"
+}

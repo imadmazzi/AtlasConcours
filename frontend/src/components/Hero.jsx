@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../api';
-import { T } from './T';
 
 export default function Hero() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [stats, setStats] = useState(null);
@@ -26,32 +27,32 @@ export default function Hero() {
       <div style={{ position: 'relative', zIndex: 1 }}>
       <div className="hero-badge">
         <i className="fa fa-star"></i>
-        N°1 des Concours Publics au Maroc
+        {t('hero.badge') ? t('hero.badge') : 'N°1 des Concours Publics au Maroc'}
       </div>
       <h1>
-        Trouvez les derniers
-        <span className="accent">Concours au Maroc</span>
+        {t('hero.title_start') ? t('hero.title_start') : 'Trouvez les derniers'}
+        <span className="accent">{t('hero.title_accent') ? t('hero.title_accent') : ' Concours au Maroc'}</span>
       </h1>
-      <p>Tous les concours publics, offres d'emploi et conseils carrière en un seul endroit.</p>
+      <p>{t('hero.desc') ? t('hero.desc') : 'Tous les concours publics, offres d\'emploi et conseils carrière en un seul endroit.'}</p>
 
       <form className="hero-search" onSubmit={handleSearch}>
         <input
           type="text"
-          placeholder="Chercher un concours, un ministère..."
+          placeholder={t('search.placeholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <select value={category} onChange={e => setCategory(e.target.value)}>
-          <option value="">Toutes catégories</option>
-          <option value="Sécurité">Sécurité</option>
-          <option value="Éducation">Éducation</option>
-          <option value="Santé">Santé</option>
-          <option value="Justice">Justice</option>
-          <option value="Ingénierie">Ingénierie</option>
-          <option value="Administration">Administration</option>
+          <option value="">{t('search.all_categories') ? t('search.all_categories') : 'Toutes catégories'}</option>
+          <option value="Sécurité">{t('categories.securite') ? t('categories.securite') : 'Sécurité'}</option>
+          <option value="Éducation">{t('categories.education') ? t('categories.education') : 'Éducation'}</option>
+          <option value="Santé">{t('categories.sante') ? t('categories.sante') : 'Santé'}</option>
+          <option value="Justice">{t('categories.justice') ? t('categories.justice') : 'Justice'}</option>
+          <option value="Ingénierie">{t('categories.ingenierie') ? t('categories.ingenierie') : 'Ingénierie'}</option>
+          <option value="Administration">{t('categories.administration') ? t('categories.administration') : 'Administration'}</option>
         </select>
         <button type="submit">
-          <i className="fa fa-search"></i> Rechercher
+          <i className="fa fa-search"></i> {t('search.button')}
         </button>
       </form>
 

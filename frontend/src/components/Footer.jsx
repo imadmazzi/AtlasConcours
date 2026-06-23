@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 export default function Footer() {
+  const { t } = useTranslation();
   return (
     <footer>
       <div className="container">
@@ -18,11 +20,11 @@ export default function Footer() {
             </p>
           </div>
           <div className="footer-col">
-            <h4>Navigation</h4>
-            <Link to="/">Accueil</Link>
-            <Link to="/concours">Concours</Link>
-            <Link to="/jobs">Emplois</Link>
-            <Link to="/blog">Blog</Link>
+            <h4>{t('nav.home') ? 'Navigation' : 'Navigation'}</h4>
+            <Link to="/">{t('nav.home')}</Link>
+            <Link to="/concours">{t('nav.concours')}</Link>
+            <Link to="/jobs">{t('nav.jobs')}</Link>
+            <Link to="/blog">{t('nav.blog')}</Link>
           </div>
           <div className="footer-col">
             <h4>Concours</h4>
@@ -32,7 +34,7 @@ export default function Footer() {
             <Link to="/concours?categorie=Justice">Justice</Link>
           </div>
           <div className="footer-col">
-            <h4>Contact</h4>
+            <h4>{t('footer.contact')}</h4>
             <a href="mailto:contact@atlasconcours.ma">contact@atlasconcours.ma</a>
             <a href="https://t.me/atlasconcours" target="_blank" rel="noopener noreferrer">Telegram</a>
           </div>

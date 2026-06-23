@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { T } from './T';
+import { useTranslation } from 'react-i18next';
 
 export default function Navbar() {
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isAdmin = location.pathname.startsWith('/admin');
   if (isAdmin) return null;
+
+  const toggleLang = () => {
+    const currentLang = i18n.language || 'fr';
+    const newLang = currentLang.startsWith('ar') ? 'fr' : 'ar';
+    i18n.changeLanguage(newLang);
+  };
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -40,35 +47,60 @@ export default function Navbar() {
         <ul className="nav-links desktop-nav">
           <li>
             <Link to="/" className={location.pathname === '/' ? 'active' : ''}>
-              <T fr="Accueil" arKey="nav_home" />
+              {t('nav.home')}
             </Link>
           </li>
           <li>
             <Link to="/concours" className={location.pathname.startsWith('/concours') ? 'active' : ''}>
-              <T fr="Concours" arKey="nav_concours" />
+              {t('nav.concours')}
             </Link>
           </li>
           <li>
             <Link to="/jobs" className={location.pathname.startsWith('/jobs') ? 'active' : ''}>
-              <T fr="Emplois" arKey="nav_emplois" />
+              {t('nav.jobs')}
             </Link>
           </li>
           <li>
             <Link to="/blog" className={location.pathname === '/blog' ? 'active' : ''}>
-              <T fr="Blog" arKey="nav_blog" />
+              {t('nav.blog')}
             </Link>
           </li>
         </ul>
 
-        {/* Hamburger button — mobile only */}
-        <button
-          className="menu-btn"
-          aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
-          aria-expanded={isMenuOpen}
-          onClick={() => setIsMenuOpen(prev => !prev)}
-        >
-          <i className={isMenuOpen ? 'fas fa-times' : 'fas fa-bars'} />
-        </button>
+        {/* Action Buttons (Switcher + Mobile Toggle) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <button 
+            onClick={toggleLang} 
+            className="lang-switcher" 
+            style={{
+              background: 'var(--primary)',
+              border: 'none',
+              borderRadius: '20px',
+              padding: '8px 16px',
+              cursor: 'pointer',
+              fontWeight: 700,
+              fontSize: '14px',
+              color: '#ffffff',
+              boxShadow: 'var(--shadow-sm)',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: '70px'
+            }}
+          >
+            {i18n.language?.startsWith('ar') ? 'FR' : 'عربية'}
+          </button>
+
+          {/* Hamburger button — mobile only */}
+          <button
+            className="menu-btn"
+            aria-label={isMenuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen(prev => !prev)}
+          >
+            <i className={isMenuOpen ? 'fas fa-times' : 'fas fa-bars'} />
+          </button>
+        </div>
       </div>
 
       {/* Mobile dropdown — rendered outside navbar-container so it can span full width */}
@@ -77,22 +109,22 @@ export default function Navbar() {
           <ul className="mobile-nav-links">
             <li>
               <Link to="/" className={location.pathname === '/' ? 'active' : ''} onClick={closeMenu}>
-                <T fr="Accueil" arKey="nav_home" />
+                {t('nav.home')}
               </Link>
             </li>
             <li>
               <Link to="/concours" className={location.pathname.startsWith('/concours') ? 'active' : ''} onClick={closeMenu}>
-                <T fr="Concours" arKey="nav_concours" />
+                {t('nav.concours')}
               </Link>
             </li>
             <li>
               <Link to="/jobs" className={location.pathname.startsWith('/jobs') ? 'active' : ''} onClick={closeMenu}>
-                <T fr="Emplois" arKey="nav_emplois" />
+                {t('nav.jobs')}
               </Link>
             </li>
             <li>
               <Link to="/blog" className={location.pathname === '/blog' ? 'active' : ''} onClick={closeMenu}>
-                <T fr="Blog" arKey="nav_blog" />
+                {t('nav.blog')}
               </Link>
             </li>
           </ul>

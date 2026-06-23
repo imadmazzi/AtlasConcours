@@ -1969,3 +1969,26 @@ footer {
   border-top: 1px solid var(--border);
   padding-top: 14px;
 }
+  
+/* ========== RTL SUPPORT ========== */  
+[dir="rtl"] .navbar .nav-links { margin-left: 0; margin-right: auto; }  
+[dir="rtl"] .footer-grid { text-align: right; }  
+[dir="rtl"] .hero { text-align: center; }  
+[dir="rtl"] .search-box button, [dir="rtl"] .hero-search button { border-radius: 30px 0 0 30px; margin-left: 0; }  
+[dir="rtl"] .search-box input, [dir="rtl"] .hero-search input { border-radius: 0 30px 30px 0; }  
+[dir="rtl"] .search-box select, [dir="rtl"] .hero-search select { border-left: 1px solid var(--border); border-right: none; }  
+[dir="rtl"] .social-float { left: 28px; right: auto; }  
+[dir="rtl"] .detail-content ul { padding-right: 20px; padding-left: 0; }  
+[dir="rtl"] .emploi-meta span i, [dir="rtl"] .card-date span.icon, [dir="rtl"] .card-date i { margin-left: 6px; margin-right: 0; }  
+[dir="rtl"] .btn i.fa-arrow-right { transform: scaleX(-1); }  
+[dir="rtl"] .see-all i { transform: scaleX(-1); }  
+[dir="rtl"] .card-footer, [dir="rtl"] .blog-footer, [dir="rtl"] .detail-header-meta { flex-direction: row; }  
+[dir="rtl"] .stats-grid, [dir="rtl"] .top-grids, [dir="rtl"] .charts-grid { direction: rtl; }  
+[dir="rtl"] th { text-align: right; }  
+[dir="rtl"] .desktop-nav { padding: 0; margin-right: 0; }  
+[dir="rtl"] .hero-search button { padding-left: 28px; padding-right: 28px; }  
+[dir="rtl"] .footer-logo .logo-img { transform-origin: right bottom; }  
+[dir="rtl"] .card { text-align: right; }  
+[dir="rtl"] .card-top { flex-direction: row-reverse; }  
+[dir="rtl"] .mobile-nav-links a { text-align: right; padding-right: 24px; padding-left: 0; }  
+[dir="rtl"] .mobile-nav-links a:hover, [dir="rtl"] .mobile-nav-links a.active { padding-right: 32px; padding-left: 0; }

@@ -86,10 +86,11 @@ export default function ConcoursDetailPage() {
 
   // Merge API fields with regex-extracted fallbacks
   const organisme = concours.organisme || meta.ministere;
-  const postes    = meta.postes;
+  const postes    = concours.postes || meta.postes;
   const grade     = meta.grade;
-  const diplome   = meta.diplome;
+  const diplome   = concours.diplome || meta.diplome;
   const datePubli = meta.datePubli;
+  const htmlContent = concours.texte_complet || concours.description;
 
   return (
     <main className="page-job-detail">
@@ -179,8 +180,8 @@ export default function ConcoursDetailPage() {
                 <div className="facts-grid">
                   {postes && (
                     <div className="fact-item">
-                      <span className="fact-label">Postes ouverts</span>
-                      <span className="fact-value highlight">{postes}</span>
+                       <span className="fact-label">Postes ouverts</span>
+                       <span className="fact-value highlight">{postes}</span>
                     </div>
                   )}
                   {grade && (
@@ -198,6 +199,18 @@ export default function ConcoursDetailPage() {
                 </div>
               </div>
             )}
+
+            <div className="card concours-desc-card">
+              <h2 className="card-section-title">
+                <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'annonce
+              </h2>
+              <div
+                className="detail-html-content"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ fontSize: '16px', lineHeight: '1.8', color: 'var(--text)' }}
+              />
+            </div>
 
             {/* Structured Data View */}
             <div className="card concours-desc-card">

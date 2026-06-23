@@ -11,7 +11,7 @@ import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminConcours from './pages/AdminConcours';
 import AdminEmplois from './pages/AdminEmplois';
-import { applyRtl } from './i18n';
+import { useTranslation } from 'react-i18next';
 
 const GA_MEASUREMENT_ID = 'G-C5L229P3N6';
 
@@ -67,7 +67,19 @@ import ArticleDetailPage from './pages/ArticleDetailPage';
 import ChatWidget from './components/ChatWidget';
 
 function App() {
-  useEffect(() => { applyRtl(); }, []);
+  const { i18n } = useTranslation();
+
+  useEffect(() => {
+    if (i18n.language?.startsWith('ar')) {
+      document.documentElement.dir = 'rtl';
+      document.documentElement.lang = 'ar';
+      document.body.classList.add('rtl');
+    } else {
+      document.documentElement.dir = 'ltr';
+      document.documentElement.lang = 'fr';
+      document.body.classList.remove('rtl');
+    }
+  }, [i18n.language]);
 
   return (
     <BrowserRouter>

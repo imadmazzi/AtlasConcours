@@ -74,6 +74,9 @@ export default function JobDetailPage() {
 
   // DOMPurify removed
   const extracted = extractJobData(job.description);
+  const diplome = job.diplome || extracted.formation;
+  const postes  = job.postes || extracted.postes;
+  const htmlContent = job.texte_complet || job.description;
 
   return (
     <main className="page-job-detail">
@@ -132,13 +135,19 @@ export default function JobDetailPage() {
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '30px', padding: 0, border: 'none', background: 'transparent' }}>
             
             {/* STRUCTURED OVERVIEW */}
-            {(extracted.salaire || extracted.experience || extracted.formation) && (
+            {(extracted.salaire || extracted.experience || diplome || postes) && (
               <div className="card" style={{ padding: '30px' }}>
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <i className="fa fa-list-alt" style={{ color: 'var(--primary)' }}></i>
                   Résumé de l'offre
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                  {postes && (
+                    <div>
+                      <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Postes ouverts</span>
+                      <strong>{postes}</strong>
+                    </div>
+                  )}
                   {extracted.salaire && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Salaire</span>
@@ -151,15 +160,27 @@ export default function JobDetailPage() {
                       <strong>{extracted.experience}</strong>
                     </div>
                   )}
-                  {extracted.formation && (
+                  {diplome && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Formation requise</span>
-                      <strong>{extracted.formation}</strong>
+                      <strong>{diplome}</strong>
                     </div>
                   )}
                 </div>
               </div>
             )}
+
+            <div className="card concours-desc-card">
+              <h2 className="card-section-title">
+                <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'annonce
+              </h2>
+              <div
+                className="detail-html-content"
+                dangerouslySetInnerHTML={{ __html: htmlContent }}
+                style={{ fontSize: '16px', lineHeight: '1.8', color: 'var(--text)' }}
+              />
+            </div>
 
             {/* Structured Data View */}
             <div className="card concours-desc-card">
@@ -183,10 +204,10 @@ export default function JobDetailPage() {
                     <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{extracted.contrat}</div>
                   </div>
                 )}
-                {extracted.formation && (
+                {diplome && (
                   <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
                     <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Formation requise</div>
-                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{extracted.formation}</div>
+                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{diplome}</div>
                   </div>
                 )}
                 <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
