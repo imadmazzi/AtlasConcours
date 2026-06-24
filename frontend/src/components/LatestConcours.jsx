@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { T } from './T';
+import useBilingual from '../hooks/useBilingual';
 
 const BADGE_MAP = {
   'Sécurité': 'securite', 'Éducation': 'education', 'Santé': 'sante',
@@ -37,7 +38,9 @@ export default function LatestConcours() {
         {loading && <div className="loading"><div className="loading-spinner"></div><p>Chargement...</p></div>}
         {!loading && concours.length === 0 && <div className="empty-state"><i className="fa fa-clipboard-list"></i><p>Aucun concours disponible.</p></div>}
         <div className="cards-grid">
-          {!loading && concours.map(c => (
+          {!loading && concours.map(c => {
+            const bl = useBilingual(c); // eslint-disable-line react-hooks/rules-of-hooks
+            return (
             <div key={c.id} className="card">
               <div className="card-top">
                 <span className={getBadge(c.categorie)}>{c.categorie || 'Général'}</span>
@@ -50,10 +53,10 @@ export default function LatestConcours() {
                     <i className="fa fa-university text-blue-600 text-lg" style={{ fontSize: 18, color: '#2563eb' }}></i>
                   </div>
                 )}
-                <span style={{ flex: 1 }}>{c.titre}</span>
+                <span style={{ flex: 1 }}>{bl.titre}</span>
               </h3>
               <p className="card-body">
-                {(c.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
+                {(bl.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
               </p>
               <div className="card-footer">
                 <div className="card-date">
@@ -65,7 +68,8 @@ export default function LatestConcours() {
                 </Link>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </section>

@@ -1992,3 +1992,85 @@ footer {
 [dir="rtl"] .card-top { flex-direction: row-reverse; }  
 [dir="rtl"] .mobile-nav-links a { text-align: right; padding-right: 24px; padding-left: 0; }  
 [dir="rtl"] .mobile-nav-links a:hover, [dir="rtl"] .mobile-nav-links a.active { padding-right: 32px; padding-left: 0; }
+
+/* ── RTL Detail Page Overrides ───────────────────────────────── */
+[dir="rtl"] .page-header,
+[dir="rtl"] .concours-hero { text-align: right; direction: rtl; }
+
+[dir="rtl"] .breadcrumb { direction: rtl; }
+
+[dir="rtl"] .concours-meta-grid,
+[dir="rtl"] .page-header-meta,
+[dir="rtl"] .detail-meta { flex-direction: row; direction: rtl; justify-content: flex-start; text-align: right; }
+
+[dir="rtl"] .concours-hero-title,
+[dir="rtl"] .detail-main h1,
+[dir="rtl"] .detail-main h2,
+[dir="rtl"] .detail-main h3 { text-align: right; }
+
+[dir="rtl"] .detail-main { direction: rtl; text-align: right; }
+
+[dir="rtl"] .detail-main .data-row { flex-direction: row-reverse; }
+
+[dir="rtl"] .detail-main .card-section-title i { margin-right: 0; margin-left: 10px; }
+
+[dir="rtl"] .concours-badges { flex-direction: row-reverse; }
+
+[dir="rtl"] .meta-chip { text-align: right; }
+[dir="rtl"] .meta-chip-icon { margin-right: 0; margin-left: 12px; }
+
+/* ── HTML Content Cleanup ─────────────────────────────────────── */
+.clean-html-content {
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+}
+
+.clean-html-content table,
+.clean-html-content tbody,
+.clean-html-content tr,
+.clean-html-content td,
+.clean-html-content th {
+  /* Remove rigid table constraints */
+  border: none !important;
+  background: transparent !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 8px !important;
+}
+
+.clean-html-content table {
+  /* Fallback: Make table behave like a block with horizontal scroll */
+  display: block;
+  width: 100% !important;
+  overflow-x: auto;
+  margin: 16px 0;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: collapse;
+}
+
+/* Ensure images or embedded elements do not overflow */
+.clean-html-content img,
+.clean-html-content iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Aggressive Cleanup for Scraped HTML ── */
+/* Hide known bad wrapper classes and elements from emploi-public.ma */
+.clean-html-content .field-name-field-banniere,
+.clean-html-content .field-type-image,
+.clean-html-content .print_html,
+.clean-html-content .print_mail,
+.clean-html-content .links,
+.clean-html-content .social-links,
+.clean-html-content h1,
+.clean-html-content h2.node-title,
+.clean-html-content img[alt*="banniere"],
+.clean-html-content a[href*="candidature"],
+.clean-html-content a[href*="postuler"] {
+  display: none !important;
+}

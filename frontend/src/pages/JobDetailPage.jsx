@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import InlineFAQ, { buildJobFAQ } from '../components/InlineFAQ';
+import useBilingual from '../hooks/useBilingual';
+import { useTranslation } from 'react-i18next';
 
 function formatDate(d) {
   if (!d || d === 'N/A') return "Consulter l'annonce";
@@ -36,6 +38,7 @@ export default function JobDetailPage() {
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -43,16 +46,18 @@ export default function JobDetailPage() {
 
   useEffect(() => {
     if (job) {
-      document.title = `${job.titre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`;
+      const isAr = i18n.language?.startsWith('ar');
+      const blTitre = isAr ? (job.titre_ar || job.titre) : (job.titre || job.titre_ar);
+      document.title = `${blTitre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`;
       let metaDesc = document.querySelector('meta[name="description"]');
       if (!metaDesc) {
         metaDesc = document.createElement('meta');
         metaDesc.name = "description";
         document.head.appendChild(metaDesc);
       }
-      metaDesc.content = `اكتشف تفاصيل وشروط التسجيل في مباراة ${job.titre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`;
+      metaDesc.content = `اكتشف تفاصيل وشروط التسجيل في مباراة ${blTitre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`;
     }
-  }, [job]);
+  }, [job, i18n.language]);
 
   useEffect(() => {
     setLoading(true);
@@ -73,10 +78,10 @@ export default function JobDetailPage() {
   );
 
   // DOMPurify removed
-  const extracted = extractJobData(job.description);
-  const diplome = job.diplome || extracted.formation;
+  const bl = useBilingual(job);
+  const extracted = extractJobData(bl.texte_complet);
+  const diplome = bl.diplome || extracted.formation;
   const postes  = job.postes || extracted.postes;
-  const htmlContent = job.texte_complet || job.description;
 
   return (
     <main className="page-job-detail">
@@ -106,7 +111,7 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{job.titre}</h1>
+          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{bl.titre}</h1>
           
           <div className="page-header-meta" style={{ gap: '24px' }}>
             {(job.entreprise || job.organisme) && (
@@ -135,19 +140,13 @@ export default function JobDetailPage() {
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '30px', padding: 0, border: 'none', background: 'transparent' }}>
             
             {/* STRUCTURED OVERVIEW */}
-            {(extracted.salaire || extracted.experience || diplome || postes) && (
+            {(extracted.salaire || extracted.experience || extracted.formation) && (
               <div className="card" style={{ padding: '30px' }}>
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <i className="fa fa-list-alt" style={{ color: 'var(--primary)' }}></i>
                   Résumé de l'offre
                 </h2>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
-                  {postes && (
-                    <div>
-                      <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Postes ouverts</span>
-                      <strong>{postes}</strong>
-                    </div>
-                  )}
                   {extracted.salaire && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Salaire</span>
@@ -160,91 +159,88 @@ export default function JobDetailPage() {
                       <strong>{extracted.experience}</strong>
                     </div>
                   )}
-                  {diplome && (
+                  {extracted.formation && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Formation requise</span>
-                      <strong>{diplome}</strong>
+                      <strong>{extracted.formation}</strong>
                     </div>
                   )}
                 </div>
               </div>
             )}
 
-            <div className="card concours-desc-card">
-              <h2 className="card-section-title">
-                <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'annonce
-              </h2>
-              <div
-                className="detail-html-content"
-                dangerouslySetInnerHTML={{ __html: htmlContent }}
-                style={{ fontSize: '16px', lineHeight: '1.8', color: 'var(--text)' }}
-              />
-            </div>
-
-            {/* Structured Data View */}
-            <div className="card concours-desc-card">
-              <h2 className="card-section-title" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 28 }}>
-                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'offre
-              </h2>
-
-              <div className="structured-data-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Entreprise / Administration</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.entreprise || job.organisme || 'Non spécifié'}</div>
-                </div>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Nom du Poste</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.titre || 'Non spécifié'}</div>
-                </div>
-                {extracted.contrat && (
-                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Type de contrat</div>
-                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{extracted.contrat}</div>
-                  </div>
-                )}
-                {diplome && (
-                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Formation requise</div>
-                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{diplome}</div>
-                  </div>
-                )}
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Localisation</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{job.localisation || job.ville || 'Maroc'}</div>
-                </div>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Délai de dépôt</div>
-                  <div style={{ flex: 1, color: 'var(--danger)', fontWeight: 800 }}>{formatDate(job.date_limite || job.deadline)}</div>
+            {/* Description (AI only) */}
+            {bl.description && (
+              <div className="card concours-desc-card">
+                <h2 className="card-section-title">
+                  <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                  Description de l'annonce
+                </h2>
+                <div className="concours-intro">
+                  <p style={{ fontSize: '16px', lineHeight: '1.8', margin: 0, fontWeight: 500 }}>{bl.description}</p>
                 </div>
               </div>
+            )}
 
-              {/* PDF / Apply Download CTA Section */}
-              <div style={{ marginTop: '40px', background: '#f8fafc', padding: '32px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                <div style={{ width: '56px', height: '56px', background: '#ef4444', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-                  <i className="fa fa-file-pdf"></i>
-                </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Avis de l'offre officiel</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
-                  Téléchargez le document officiel ou consultez la page d'origine pour les détails complets et les modalités de candidature.
-                </p>
-                {job.lien_candidature || job.lien || job.pdf_url ? (
-                  <a href={job.pdf_url || job.lien_candidature || job.lien} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', fontSize: '16px', borderRadius: '12px', background: '#ef4444', border: 'none', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
-                    <i className="fa fa-download" style={{ marginRight: '10px' }}></i>
-                    Télécharger l'Arrêté du Concours (PDF)
-                  </a>
-                ) : (
-                  <div className="cta-link-unavailable" style={{ display: 'inline-block' }}>
-                    <i className="fa fa-exclamation-circle"></i> Document non disponible
+            {/* Meta chips — clean icon rows replacing the old table */}
+            <div className="card concours-facts-card">
+              <h2 className="card-section-title">
+                <i className="fa fa-info-circle" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Informations clés
+              </h2>
+              <div className="concours-meta-grid">
+                {(job.entreprise || job.organisme) && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-building"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Entreprise / Administration</span>
+                      <span className="meta-chip-value">{job.entreprise || job.organisme}</span>
+                    </div>
                   </div>
                 )}
+                {extracted.contrat && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-file-contract"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Type de contrat</span>
+                      <span className="meta-chip-value">{extracted.contrat}</span>
+                    </div>
+                  </div>
+                )}
+                {extracted.formation && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-graduation-cap"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Formation requise</span>
+                      <span className="meta-chip-value">{extracted.formation}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="meta-chip">
+                  <span className="meta-chip-icon"><i className="fa fa-map-marker-alt"></i></span>
+                  <div>
+                    <span className="meta-chip-label">Localisation</span>
+                    <span className="meta-chip-value">{job.localisation || job.ville || 'Maroc'}</span>
+                  </div>
+                </div>
+                <div className="meta-chip meta-chip-urgent">
+                  <span className="meta-chip-icon"><i className="fa fa-clock"></i></span>
+                  <div>
+                    <span className="meta-chip-label">Délai de dépôt</span>
+                    <span className="meta-chip-value">{formatDate(job.date_limite || job.deadline)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
-              items={buildJobFAQ(job, extracted)}
+              items={buildJobFAQ({
+                titre: bl.titre,
+                lien_candidature: job.lien_candidature,
+                lien: job.lien,
+                diplome: bl.diplome
+              }, extracted)}
               title="أسئلة شائعة حول هذه الوظيفة"
             />
 

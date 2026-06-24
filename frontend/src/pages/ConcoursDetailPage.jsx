@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../api';
 import InlineFAQ, { buildConcoursFAQ } from '../components/InlineFAQ';
+import useBilingual from '../hooks/useBilingual';
+import { useTranslation } from 'react-i18next';
 
 const BADGE_MAP = {
   'Sécurité': 'securite', 'Éducation': 'education', 'Santé': 'sante',
@@ -41,6 +43,7 @@ export default function ConcoursDetailPage() {
   const [concours, setConcours] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const { i18n } = useTranslation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -48,16 +51,18 @@ export default function ConcoursDetailPage() {
 
   useEffect(() => {
     if (concours) {
-      document.title = `${concours.titre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`;
+      const isAr = i18n.language?.startsWith('ar');
+      const blTitre = isAr ? (concours.titre_ar || concours.titre) : (concours.titre || concours.titre_ar);
+      document.title = `${blTitre} 2026 - طريقة التسجيل والوثائق المطلوبة | AtlasConcours`;
       let metaDesc = document.querySelector('meta[name="description"]');
       if (!metaDesc) {
         metaDesc = document.createElement('meta');
         metaDesc.name = "description";
         document.head.appendChild(metaDesc);
       }
-      metaDesc.content = `اكتشف تفاصيل وشروط التسجيل في مباراة ${concours.titre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`;
+      metaDesc.content = `اكتشف تفاصيل وشروط التسجيل في مباراة ${blTitre} 2026. كل ما تحتاج معرفته من الوثائق المطلوبة وآخر أجل للتقديم على موقع AtlasConcours.`;
     }
-  }, [concours]);
+  }, [concours, i18n.language]);
 
   useEffect(() => {
     setLoading(true);
@@ -82,15 +87,15 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
-  const meta = extractMeta(concours.description);
+  const bl = useBilingual(concours);
+  const meta = extractMeta(bl.texte_complet);
 
   // Merge API fields with regex-extracted fallbacks
   const organisme = concours.organisme || meta.ministere;
   const postes    = concours.postes || meta.postes;
   const grade     = meta.grade;
-  const diplome   = concours.diplome || meta.diplome;
+  const diplome   = bl.diplome || meta.diplome;
   const datePubli = meta.datePubli;
-  const htmlContent = concours.texte_complet || concours.description;
 
   return (
     <main className="page-job-detail">
@@ -121,7 +126,7 @@ export default function ConcoursDetailPage() {
           </div>
 
           {/* Title */}
-          <h1 className="concours-hero-title">{concours.titre}</h1>
+          <h1 className="concours-hero-title">{bl.titre}</h1>
 
           {/* Meta chips grid */}
           <div className="concours-meta-grid">
@@ -180,8 +185,8 @@ export default function ConcoursDetailPage() {
                 <div className="facts-grid">
                   {postes && (
                     <div className="fact-item">
-                       <span className="fact-label">Postes ouverts</span>
-                       <span className="fact-value highlight">{postes}</span>
+                      <span className="fact-label">Postes ouverts</span>
+                      <span className="fact-value highlight">{postes}</span>
                     </div>
                   )}
                   {grade && (
@@ -199,86 +204,89 @@ export default function ConcoursDetailPage() {
                 </div>
               </div>
             )}
+            
+            {/* Description (AI only) */}
+            {bl.description && (
+              <div className="card concours-desc-card">
+                <h2 className="card-section-title">
+                  <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                  Description de l'annonce
+                </h2>
+                <div className="concours-intro">
+                  <p style={{ fontSize: '16px', lineHeight: '1.8', margin: 0, fontWeight: 500 }}>{bl.description}</p>
+                </div>
+              </div>
+            )}
 
-            <div className="card concours-desc-card">
+            {/* Meta chips — clean icon rows replacing the old table */}
+            <div className="card concours-facts-card">
               <h2 className="card-section-title">
-                <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'annonce
+                <i className="fa fa-info-circle" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Informations clés
               </h2>
-              <div
-                className="detail-html-content"
-                dangerouslySetInnerHTML={{ __html: htmlContent }}
-                style={{ fontSize: '16px', lineHeight: '1.8', color: 'var(--text)' }}
-              />
-            </div>
-
-            {/* Structured Data View */}
-            <div className="card concours-desc-card">
-              <h2 className="card-section-title" style={{ borderBottom: '1px solid var(--border)', paddingBottom: 16, marginBottom: 28 }}>
-                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'offre
-              </h2>
-
-              <div className="structured-data-list" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Organisme / Ministère</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{organisme || 'Non spécifié'}</div>
-                </div>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Poste / Type de Recrutement</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{concours.titre || 'Non spécifié'}</div>
-                </div>
+              <div className="concours-meta-grid">
+                {organisme && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-landmark"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Organisme</span>
+                      <span className="meta-chip-value">{organisme}</span>
+                    </div>
+                  </div>
+                )}
+                {postes && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-users"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Postes ouverts</span>
+                      <span className="meta-chip-value" style={{ color: 'var(--accent)', fontWeight: 800 }}>{postes}</span>
+                    </div>
+                  </div>
+                )}
                 {grade && (
-                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Grade / Échelle</div>
-                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{grade}</div>
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-layer-group"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Grade / Échelle</span>
+                      <span className="meta-chip-value">{grade}</span>
+                    </div>
                   </div>
                 )}
                 {diplome && (
-                  <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Diplôme requis</div>
-                    <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{diplome}</div>
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-graduation-cap"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Diplôme requis</span>
+                      <span className="meta-chip-value">{diplome}</span>
+                    </div>
                   </div>
                 )}
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Nombre de postes ouverts</div>
-                  <div style={{ flex: 1, color: 'var(--primary)', fontWeight: 800 }}>{postes || 'Non spécifié'}</div>
-                </div>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Date de publication</div>
-                  <div style={{ flex: 1, color: 'var(--text)', fontWeight: 700 }}>{datePubli || 'Non spécifié'}</div>
-                </div>
-                <div className="data-row" style={{ display: 'flex', flexWrap: 'wrap', paddingBottom: '16px', borderBottom: '1px solid var(--border)' }}>
-                  <div style={{ width: '100%', maxWidth: '280px', color: 'var(--text-muted)', fontWeight: 600, marginBottom: '4px' }}>Date limite de dépôt</div>
-                  <div style={{ flex: 1, color: 'var(--danger)', fontWeight: 800 }}>{formatDate(concours.date_limite)}</div>
-                </div>
-              </div>
-
-              {/* PDF Download CTA Section */}
-              <div style={{ marginTop: '40px', background: '#f8fafc', padding: '32px 24px', borderRadius: '16px', border: '1px solid #e2e8f0', textAlign: 'center', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
-                <div style={{ width: '56px', height: '56px', background: '#ef4444', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', margin: '0 auto 16px', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)' }}>
-                  <i className="fa fa-file-pdf"></i>
-                </div>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>Arrêté du Concours Officiel</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '15px', marginBottom: '24px', maxWidth: '500px', margin: '0 auto 24px' }}>
-                  Téléchargez le document officiel pour consulter les détails complets, les conditions d'accès et les modalités de candidature.
-                </p>
-                {concours.lien_source || concours.pdf_url ? (
-                  <a href={concours.pdf_url || concours.lien_source} target="_blank" rel="noreferrer" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', padding: '16px 32px', fontSize: '16px', borderRadius: '12px', background: '#ef4444', border: 'none', boxShadow: '0 6px 16px rgba(239, 68, 68, 0.3)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
-                    <i className="fa fa-download" style={{ marginRight: '10px' }}></i>
-                    Télécharger l'Arrêté du Concours (PDF)
-                  </a>
-                ) : (
-                  <div className="cta-link-unavailable" style={{ display: 'inline-block' }}>
-                    <i className="fa fa-exclamation-circle"></i> Document non disponible
+                {datePubli && (
+                  <div className="meta-chip">
+                    <span className="meta-chip-icon"><i className="fa fa-calendar-plus"></i></span>
+                    <div>
+                      <span className="meta-chip-label">Date de publication</span>
+                      <span className="meta-chip-value">{datePubli}</span>
+                    </div>
                   </div>
                 )}
+                <div className="meta-chip meta-chip-urgent">
+                  <span className="meta-chip-icon"><i className="fa fa-clock"></i></span>
+                  <div>
+                    <span className="meta-chip-label">Date limite</span>
+                    <span className="meta-chip-value">{formatDate(concours.date_limite)}</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
-              items={buildConcoursFAQ(concours, { postes, grade, diplome })}
+              items={buildConcoursFAQ({
+                titre: bl.titre,
+                lien_source: concours.lien_source,
+                diplome: bl.diplome
+              }, { postes, grade, diplome })}
               title="أسئلة شائعة حول هذه المباراة"
             />
 

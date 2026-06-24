@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { T } from './T';
+import useBilingual from '../hooks/useBilingual';
 
 function formatDate(d) {
   if (!d) return 'N/A';
@@ -30,7 +31,9 @@ export default function LatestEmplois() {
         {loading && <div className="loading"><div className="loading-spinner"></div><p>Chargement...</p></div>}
         {!loading && emplois.length === 0 && <div className="empty-state"><i className="fa fa-briefcase"></i><p>Aucune offre disponible.</p></div>}
         <div className="cards-grid">
-          {!loading && emplois.map(e => (
+          {!loading && emplois.map(e => {
+            const bl = useBilingual(e); // eslint-disable-line react-hooks/rules-of-hooks
+            return (
             <div key={e.id} className="card">
               <div className="card-top">
                 <span className="badge badge-administration">{e.organisme || e.categorie || 'Emploi'}</span>
@@ -43,10 +46,10 @@ export default function LatestEmplois() {
                     <i className="fa fa-briefcase text-green-600 text-lg" style={{ fontSize: 18, color: '#16a34a' }}></i>
                   </div>
                 )}
-                <span style={{ flex: 1 }}>{e.titre}</span>
+                <span style={{ flex: 1 }}>{bl.titre}</span>
               </h3>
               <p className="card-body">
-                {(e.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
+                {(bl.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
               </p>
               <div className="card-footer">
                 <div className="card-date">
@@ -58,7 +61,8 @@ export default function LatestEmplois() {
                 </Link>
               </div>
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
     </section>
