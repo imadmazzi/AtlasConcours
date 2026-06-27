@@ -309,44 +309,93 @@ let aiQuotaExceeded = false;
  * Réécrit un lot d'éléments via IA (Batch processing)
  */
 async function rewriteBatch(items, type = "concours") {
+  // ── Quota-exceeded / no API key fallback ───────────────────────────────────
+  // Returns a bilingual shell using the raw scraped data so the pipeline keeps
+  // working.  Arabic falls back to French text (will be blank-ish but safe).
   if (aiQuotaExceeded || !process.env.GEMINI_API_KEY || items.length === 0) {
     return items.map(item => ({
       ...item,
       rewritten: {
-        title: item.title + " (Nouveau)",
-        description: item.description,
-        summary: item.title + " est disponible.",
-        enterprise: item.enterprise || "Administration",
-        location: item.location || "Maroc",
-        postes: "",
-        deadline: "",
-        diplome: "",
-        texte_complet: item.description
-      }
+        fr: {
+          title:        item.title || '',
+          description:  item.description || '',
+          summary:      item.title ? `${item.title} est disponible.` : '',
+          enterprise:   item.enterprise || 'Administration',
+          location:     item.location  || 'Maroc',
+          postes:       '',
+          deadline:     '',
+          diplome:      '',
+          texte_complet: item.description || '',
+        },
+        ar: {
+          title:        item.title_ar || item.title || '',
+          description:  item.description_ar || item.description || '',
+          summary:      '',
+          enterprise:   item.enterprise || 'الإدارة',
+          location:     item.location  || 'المغرب',
+          postes:       '',
+          deadline:     '',
+          diplome:      '',
+          texte_complet: item.description_ar || item.description || '',
+        },
+      },
     }));
   }
 
+  // ── Build bilingual prompt ─────────────────────────────────────────────────
+  // Each item carries optional `title_ar` / `description_ar` fields that the
+  // scraper may have pulled from the Arabic-language version of the page.
+  // When present, Gemini is instructed to use them as the Arabic source rather
+  // than translating from French, which produces much higher-quality output.
+  const inputPayload = items.map(it => ({
+    t:    it.title,
+    d:    it.description,
+    t_ar: it.title_ar        || null,   // direct Arabic title if scraped
+    d_ar: it.description_ar  || null,   // direct Arabic content if scraped
+  }));
+
   const prompt = `
-    Tu es un expert en rédaction SEO et extraction de données RH au Maroc. 
-    Pour chaque élément fourni, extrais les informations clés et réécris le texte.
-    
-    Type: ${type === 'job' ? "Offres d'emploi" : "Concours de recrutement"}
-    
-    Données à traiter (JSON Array):
-    ${JSON.stringify(items.map(it => ({ t: it.title, d: it.description })))}
-    
-    Format de réponse OBLIGATOIRE (JSON Array uniquement, sans markdown supplémentaire):
+    Tu es un expert bilingue (français / arabe) spécialisé en rédaction SEO et ressources humaines au Maroc.
+    Pour chaque élément du tableau JSON fourni, extrais les informations clés et génère des versions PROPRES en français ET en arabe.
+
+    Règles importantes:
+    - Pour l'arabe: si les champs "t_ar" ou "d_ar" sont fournis, utilise-les comme source principale (ne traduis PAS depuis le français, réécris et structure proprement le texte arabe fourni).
+    - Pour l'arabe: si aucun champ arabe n'est fourni, traduis depuis le français.
+    - Le champ "texte_complet" doit être structuré avec du HTML sémantique propre (<ul>, <li>, <strong>, <h3>) — jamais de balises <html> ou <body>.
+    - "description" = résumé SEO court (2 phrases max).
+    - "postes" = nombre exact ou "غير محدد" (AR) / "Non spécifié" (FR).
+    - "deadline" = date formatée "30 Juin 2026" (FR) et "30 يونيو 2026" (AR) ou vide.
+
+    Type: ${type === 'job' ? "Offres d'emploi / عروض التوظيف" : "Concours de recrutement / مباريات التوظيف"}
+
+    Données (JSON Array):
+    ${JSON.stringify(inputPayload)}
+
+    Format de réponse OBLIGATOIRE (JSON Array uniquement, sans markdown):
     [
       {
-        "title": "Titre accrocheur et professionnel",
-        "description": "Un court résumé SEO de 2 phrases maximum",
-        "summary": "Résumé très bref de l'offre",
-        "enterprise": "Nom de l'entreprise ou organisme (si pertinent)",
-        "location": "Lieu de travail ou ville",
-        "postes": "Nombre de postes exact (ex: '20' ou 'Non spécifié')",
-        "deadline": "Date limite de candidature formatée (ex: '30 Juin 2026' ou 'Non spécifié')",
-        "diplome": "Diplômes, formations ou conditions exigées (Bref résumé)",
-        "texte_complet": "Le texte complet et détaillé de l'annonce, structuré de façon lisible et professionnelle avec du HTML sémantique propre (<ul>, <li>, <strong>, <h3>) sans balises <html> ni <body>."
+        "fr": {
+          "title": "Titre accrocheur en français",
+          "description": "Résumé SEO court en français (2 phrases max)",
+          "summary": "Résumé très bref",
+          "enterprise": "Nom de l'organisme",
+          "location": "Ville ou région",
+          "postes": "20 ou Non spécifié",
+          "deadline": "30 Juin 2026 ou vide",
+          "diplome": "Conditions / diplômes requis (bref)",
+          "texte_complet": "<h3>...</h3><ul><li>...</li></ul>"
+        },
+        "ar": {
+          "title": "العنوان بالعربية",
+          "description": "ملخص قصير للـSEO بالعربية (جملتان كحد أقصى)",
+          "summary": "ملخص مختصر",
+          "enterprise": "اسم الجهة",
+          "location": "المدينة أو المنطقة",
+          "postes": "20 أو غير محدد",
+          "deadline": "30 يونيو 2026 أو فارغ",
+          "diplome": "الشروط والمؤهلات (مختصر)",
+          "texte_complet": "<h3>...</h3><ul><li>...</li></ul>"
+        }
       }
     ]
   `;
@@ -355,25 +404,62 @@ async function rewriteBatch(items, type = "concours") {
     const result = await withTimeout(
       model.generateContent(prompt),
       AI_REWRITE_TIMEOUT,
-      'Gemini rewrite request'
+      'Gemini bilingual rewrite'
     );
-    const text = result.response.text();
+    const text    = result.response.text();
     const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
     const results = JSON.parse(jsonStr);
-    
-    return items.map((item, index) => ({
-      ...item,
-      rewritten: results[index] || { title: item.title, description: item.description, summary: "", enterprise: "", location: "", postes: "", deadline: "", diplome: "", texte_complet: item.description }
-    }));
+
+    return items.map((item, index) => {
+      const raw = results[index];
+
+      // ── Per-language fallback if Gemini returned incomplete data ───────────
+      const frRaw = raw?.fr || {};
+      const arRaw = raw?.ar || {};
+
+      const fr = {
+        title:        frRaw.title        || item.title        || '',
+        description:  frRaw.description  || item.description  || '',
+        summary:      frRaw.summary      || '',
+        enterprise:   frRaw.enterprise   || item.enterprise   || 'Administration',
+        location:     frRaw.location     || item.location     || 'Maroc',
+        postes:       frRaw.postes       || '',
+        deadline:     frRaw.deadline     || '',
+        diplome:      frRaw.diplome      || '',
+        texte_complet: frRaw.texte_complet || item.description || '',
+      };
+
+      const ar = {
+        title:        arRaw.title        || fr.title,
+        description:  arRaw.description  || fr.description,
+        summary:      arRaw.summary      || fr.summary,
+        enterprise:   arRaw.enterprise   || fr.enterprise,
+        location:     arRaw.location     || fr.location,
+        postes:       arRaw.postes       || fr.postes,
+        deadline:     arRaw.deadline     || fr.deadline,
+        diplome:      arRaw.diplome      || fr.diplome,
+        texte_complet: arRaw.texte_complet || item.description_ar || fr.texte_complet,
+      };
+
+      return { ...item, rewritten: { fr, ar } };
+    });
   } catch (error) {
-    console.error("❌ Erreur Batch IA:", error.message);
+    console.error('❌ Erreur Batch IA bilingue:', error.message);
     if (error.message && (error.message.includes('429') || error.message.toLowerCase().includes('quota'))) {
-      console.warn("⚠️ Gemini API Quota Exceeded (429). Disabling AI rewrites for this run and falling back to raw data instantly.");
+      console.warn('⚠️ Gemini Quota Exceeded (429). Disabling AI rewrites for this run.');
       aiQuotaExceeded = true;
     }
-    return items.map(item => ({ ...item, rewritten: null }));
+    // Return raw data shaped as bilingual object so pipeline never crashes
+    return items.map(item => ({
+      ...item,
+      rewritten: {
+        fr: { title: item.title, description: item.description, summary: '', enterprise: item.enterprise || '', location: item.location || 'Maroc', postes: '', deadline: '', diplome: '', texte_complet: item.description || '' },
+        ar: { title: item.title_ar || item.title, description: item.description_ar || item.description, summary: '', enterprise: item.enterprise || '', location: item.location || 'المغرب', postes: '', deadline: '', diplome: '', texte_complet: item.description_ar || item.description || '' },
+      },
+    }));
   }
 }
+
 
 /**
  * Insert a single processed item into the database immediately.
@@ -382,21 +468,28 @@ async function rewriteBatch(items, type = "concours") {
  * Returns true on success, false on error.
  */
 function insertItemNow(item, type) {
-  const safeTitle       = item.rewritten?.title       || item.title       || 'Sans titre';
-  const safeDescription = item.rewritten?.description || item.description || 'Détails non disponibles.';
-  const safeEnterprise  = item.rewritten?.enterprise  || item.enterprise  || 'Administration';
-  const safeLocation    = item.rewritten?.location    || item.location    || 'Maroc';
-  const safeDeadline    = item.rewritten?.deadline    || item.deadline    || '';
-  const safeUrl         = item.url || '';
-  const safeImageUrl    = item.imageUrl || '';
-  
-  // New fields
-  const safePostes       = item.rewritten?.postes       || '';
-  const safeDiplome      = item.rewritten?.diplome      || '';
-  const safeTexteComplet = item.rewritten?.texte_complet || item.description || '';
+  // ── Resolve FR fields (primary) ──────────────────────────────────────────
+  const rFr = item.rewritten?.fr || item.rewritten || {};   // backward-compat if old shape
+  const rAr = item.rewritten?.ar || {};
+
+  const safeTitle       = rFr.title       || item.title       || 'Sans titre';
+  const safeDescription = rFr.description || item.description || 'Détails non disponibles.';
+  const safeEnterprise  = rFr.enterprise  || item.enterprise  || 'Administration';
+  const safeLocation    = rFr.location    || item.location    || 'Maroc';
+  const safeDeadline    = rFr.deadline    || item.deadline    || '';
+  const safeUrl         = item.url        || '';
+  const safeImageUrl    = item.imageUrl   || '';
+  const safePostes      = rFr.postes      || '';
+  const safeDiplome     = rFr.diplome     || '';
+  const safeTexteComplet = rFr.texte_complet || item.description || '';
+
+  // ── Resolve AR fields (fallback to FR when missing) ──────────────────────
+  const safeTitleAr        = rAr.title        || safeTitle;
+  const safeDescriptionAr  = rAr.description  || safeDescription;
+  const safeDiplomeAr      = rAr.diplome      || safeDiplome;
+  const safeTexteCompletAr = rAr.texte_complet || safeTexteComplet;
 
   // ── Hard expiry guard ────────────────────────────────────────────────────
-  // Never insert an already-expired listing, regardless of how it got here.
   if (safeDeadline && isExpired(safeDeadline)) {
     console.warn(`  ⏭️  Skipping EXPIRED ${type}: "${safeTitle.substring(0, 60)}" (deadline: ${safeDeadline})`);
     return false;
@@ -405,12 +498,13 @@ function insertItemNow(item, type) {
   try {
     if (type === 'concours') {
       const slug = slugify(safeTitle, { lower: true, strict: true, locale: 'fr' }) + '-' + Date.now();
-      const result = db.prepare("INSERT INTO concours").run(safeTitle, slug, safeDescription, "Concours", safeDeadline, safeUrl, safeImageUrl, safePostes, safeDiplome, safeTexteComplet, safeLocation);
+      const result = db.prepare('INSERT INTO concours').run(
+        safeTitle, slug, safeDescription, 'Concours', safeDeadline,
+        safeUrl, safeImageUrl, safePostes, safeDiplome, safeTexteComplet, safeLocation,
+        // Bilingual fields
+        safeTitleAr, safeDescriptionAr, safeDiplomeAr, safeTexteCompletAr
+      );
 
-      // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
-      // Retrieve the freshly created record by its auto-assigned ID so the message
-      // contains the real DB id for the clickable deep-link.
-      // Any Telegram failure is silently caught; it NEVER crashes the cron cycle.
       const newId = result && result.lastInsertRowid;
       if (newId) {
         const newRecord = db.data.concours.find(c => c.id == newId);
@@ -421,9 +515,13 @@ function insertItemNow(item, type) {
         }
       }
     } else {
-      const result = db.prepare("INSERT INTO emplois").run(safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl, safeImageUrl, safePostes, safeDiplome, safeDeadline, safeTexteComplet);
+      const result = db.prepare('INSERT INTO emplois').run(
+        safeTitle, safeEnterprise, safeLocation, safeDescription, safeUrl,
+        safeImageUrl, safePostes, safeDiplome, safeDeadline, safeTexteComplet,
+        // Bilingual fields
+        safeTitleAr, safeDescriptionAr, safeDiplomeAr, safeTexteCompletAr
+      );
 
-      // ── Telegram broadcast (fire-and-forget) ─────────────────────────────
       const newId = result && result.lastInsertRowid;
       if (newId) {
         const newRecord = db.data.emplois.find(e => e.id == newId);
@@ -434,13 +532,14 @@ function insertItemNow(item, type) {
         }
       }
     }
-    console.log(`  💾 Inserted: ${safeTitle.substring(0, 60)}…`);
+    console.log(`  💾 Inserted (bilingual): ${safeTitle.substring(0, 60)}…`);
     return true;
   } catch (insertErr) {
     console.error(`  ❌ Insert failed (${safeTitle.substring(0, 40)}):`, insertErr.message);
     return false;
   }
 }
+
 
 /**
  * Extract strictly the description and strip out any noisy layout strings

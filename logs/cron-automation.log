@@ -1,0 +1,80 @@
+2026-06-23T20:04:48.606Z [CRON AUTOMATION] Initializing cron scheduler.
+2026-06-23T20:04:48.729Z [CRON AUTOMATION] Cron scheduler registered: local hourly pipeline at 0 * * * *, daily safety pipeline at 0 0 * * *. Vercel production uses vercel.json only.
+2026-06-23T22:00:00.045Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-23T22:00:00.045Z.
+2026-06-23T22:00:00.049Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-23T22:00:00.049Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-23T22:00:00.049Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-24T18:26:01.833Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-24T18:26:01.833Z [CRON AUTOMATION] Finished anapec scraper in 73561783ms: {"added":450,"errors":0}
+2026-06-24T18:26:40.852Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-24T18:26:40.851Z [CRON AUTOMATION] Finished jobs scraper in 39018ms: {"added":3,"errors":0,"skipped":0}
+2026-06-24T18:27:30.253Z [CRON AUTOMATION] Finished concours scraper in 49401ms: {"added":4,"errors":0,"skipped":0}
+2026-06-24T18:27:36.080Z [CRON AUTOMATION] Database flush failed after scraper pipeline: MongoServerError: BSONObj size: 17114871 (0x10526F7) is invalid. Size must be between 0 and 16809984(16MB) First element: update: "store"
+    at Connection.sendCommand (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\cmap\connection.js:320:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Connection.command (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\cmap\connection.js:347:26)
+    at async Server.command (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\sdam\server.js:208:29)
+    at async executeOperationWithRetries (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\operations\execute_operation.js:193:32)
+    at async executeOperation (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async Collection.updateOne (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\collection.js:238:16)
+    at async Object.flush (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\server\db.js:403:7)
+    at async runAutomatedScraperPipeline (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\server\automation.js:76:7)
+2026-06-24T18:27:36.081Z [CRON AUTOMATION] Automated scraper pipeline completed in 73656032ms.
+2026-06-24T19:00:00.061Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-24T19:00:00.061Z.
+2026-06-24T19:00:00.062Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-24T19:00:00.062Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-24T19:00:00.062Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-24T19:06:38.293Z [CRON AUTOMATION] Finished anapec scraper in 398231ms: {"added":190,"errors":0}
+2026-06-24T19:06:38.293Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-24T19:07:13.138Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-24T19:07:13.138Z [CRON AUTOMATION] Finished jobs scraper in 34845ms: {"added":0,"errors":0}
+2026-06-24T19:08:05.495Z [CRON AUTOMATION] Automated scraper pipeline completed in 485433ms.
+2026-06-24T19:08:05.353Z [CRON AUTOMATION] Finished concours scraper in 52215ms: {"added":4,"errors":0,"skipped":0}
+2026-06-24T19:08:05.495Z [CRON AUTOMATION] Database flush failed after scraper pipeline: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range. It must be >= 0 && <= 17825792. Received 17825794
+    at validateOffset (node:buffer:136:3)
+    at Buffer.write (node:buffer:1199:5)
+    at Object.encodeUTF8Into (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:320:58)
+    at serializeString (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3562:44)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4109:25)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3920:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4131:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+2026-06-24T20:00:00.056Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-24T20:00:00.055Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-24T20:00:00.055Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-24T20:00:00.054Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-24T20:00:00.054Z.
+2026-06-24T20:07:06.636Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-24T20:07:06.631Z [CRON AUTOMATION] Finished anapec scraper in 426573ms: {"added":190,"errors":0}
+2026-06-24T20:07:43.862Z [CRON AUTOMATION] Finished jobs scraper in 37226ms: {"added":0,"errors":0}
+2026-06-24T20:07:43.863Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-24T20:08:34.478Z [CRON AUTOMATION] Finished concours scraper in 50616ms: {"added":4,"errors":0,"skipped":0}
+2026-06-24T20:08:40.549Z [CRON AUTOMATION] Automated scraper pipeline completed in 520494ms.
+2026-06-24T20:08:40.549Z [CRON AUTOMATION] Database flush failed after scraper pipeline: MongoServerError: BSONObj size: 17584297 (0x10C50A9) is invalid. Size must be between 0 and 16809984(16MB) First element: update: "store"
+    at Connection.sendCommand (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\cmap\connection.js:320:27)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Connection.command (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\cmap\connection.js:347:26)
+    at async Server.command (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\sdam\server.js:208:29)
+    at async executeOperationWithRetries (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\operations\execute_operation.js:193:32)
+    at async executeOperation (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\operations\execute_operation.js:83:16)
+    at async Collection.updateOne (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\mongodb\lib\collection.js:238:16)
+    at async Object.flush (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\server\db.js:403:7)
+    at async runAutomatedScraperPipeline (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\server\automation.js:76:7)
+2026-06-25T22:00:00.474Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-25T22:00:00.390Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-25T22:00:00.388Z.
+2026-06-25T22:00:00.474Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-25T22:00:00.473Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-25T22:06:58.316Z [CRON AUTOMATION] Finished anapec scraper in 417831ms: {"added":196,"errors":0}
+2026-06-25T22:06:58.316Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-25T22:07:34.042Z [CRON AUTOMATION] Finished jobs scraper in 35726ms: {"added":0,"errors":0}
+2026-06-25T22:07:34.042Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-25T22:08:34.983Z [CRON AUTOMATION] Finished concours scraper in 60941ms: {"added":10,"errors":0,"skipped":0}
+2026-06-25T22:08:35.237Z [CRON AUTOMATION] Automated scraper pipeline completed in 514764ms.
+2026-06-25T22:08:35.237Z [CRON AUTOMATION] Database flush failed after scraper pipeline: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range. It must be >= 0 && <= 17825792. Received 17825794
+    at validateOffset (node:buffer:136:3)
+    at Buffer.write (node:buffer:1199:5)
+    at Object.encodeUTF8Into (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:320:58)
+    at serializeString (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3562:44)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4109:25)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3920:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4131:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)

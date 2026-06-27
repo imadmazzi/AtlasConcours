@@ -493,7 +493,27 @@ const db = {
         console.log('ARGS (run):', args);
         if (query.includes('INSERT INTO concours')) {
           const id = this.data.concours.length > 0 ? Math.max(...this.data.concours.map(c => c.id)) + 1 : 1;
-          this.data.concours.push({ id, titre: args[0], slug: args[1], description: args[2], categorie: args[3], date_limite: args[4], lien_source: args[5], imageUrl: args[6] || '', postes: args[7] || '', diplome: args[8] || '', texte_complet: args[9] || '', localisation: args[10] || '', vues: 0, created_at: new Date().toISOString() });
+          this.data.concours.push({
+            id,
+            titre:            args[0],
+            slug:             args[1],
+            description:      args[2],
+            categorie:        args[3],
+            date_limite:      args[4],
+            lien_source:      args[5],
+            imageUrl:         args[6]  || '',
+            postes:           args[7]  || '',
+            diplome:          args[8]  || '',
+            texte_complet:    args[9]  || '',
+            localisation:     args[10] || '',
+            // Bilingual fields (args[11-14]) — present only when scraper provides them
+            titre_ar:         args[11] || args[0],   // fallback to FR title
+            description_ar:   args[12] || args[2],   // fallback to FR description
+            diplome_ar:       args[13] || args[8] || '',
+            texte_complet_ar: args[14] || args[9] || '',
+            vues: 0,
+            created_at: new Date().toISOString()
+          });
           this.save();
           return { lastInsertRowid: id };
         }
@@ -517,7 +537,25 @@ const db = {
 
         if (query.includes('INSERT INTO emplois')) {
           const id = this.data.emplois.length > 0 ? Math.max(...this.data.emplois.map(e => e.id)) + 1 : 1;
-          this.data.emplois.push({ id, titre: args[0], entreprise: args[1], localisation: args[2], description: args[3], lien_candidature: args[4], imageUrl: args[5] || '', postes: args[6] || '', diplome: args[7] || '', deadline: args[8] || '', texte_complet: args[9] || '', created_at: new Date().toISOString() });
+          this.data.emplois.push({
+            id,
+            titre:            args[0],
+            entreprise:       args[1],
+            localisation:     args[2],
+            description:      args[3],
+            lien_candidature: args[4],
+            imageUrl:         args[5]  || '',
+            postes:           args[6]  || '',
+            diplome:          args[7]  || '',
+            deadline:         args[8]  || '',
+            texte_complet:    args[9]  || '',
+            // Bilingual fields (args[10-13]) — present only when scraper provides them
+            titre_ar:         args[10] || args[0],   // fallback to FR title
+            description_ar:   args[11] || args[3],   // fallback to FR description
+            diplome_ar:       args[12] || args[7] || '',
+            texte_complet_ar: args[13] || args[9] || '',
+            created_at: new Date().toISOString()
+          });
           this.save(); return { lastInsertRowid: id };
         }
         if (query.includes('UPDATE emplois')) {
