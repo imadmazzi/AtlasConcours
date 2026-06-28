@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { T } from './T';
-import useBilingual from '../hooks/useBilingual';
+import { getBilingual } from '../hooks/useBilingual';
+import { useTranslation } from 'react-i18next';
 
 function formatDate(d) {
   if (!d) return 'N/A';
@@ -13,6 +14,8 @@ function formatDate(d) {
 export default function LatestEmplois() {
   const [emplois, setEmplois] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { i18n } = useTranslation();
+  const isAr = i18n.language?.startsWith('ar');
 
   useEffect(() => {
     api.get('/emplois?limit=6').then(res => {
@@ -32,7 +35,7 @@ export default function LatestEmplois() {
         {!loading && emplois.length === 0 && <div className="empty-state"><i className="fa fa-briefcase"></i><p>Aucune offre disponible.</p></div>}
         <div className="cards-grid">
           {!loading && emplois.map(e => {
-            const bl = useBilingual(e); // eslint-disable-line react-hooks/rules-of-hooks
+            const bl = getBilingual(e, isAr);
             return (
             <div key={e.id} className="card">
               <div className="card-top">

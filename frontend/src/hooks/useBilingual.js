@@ -1,21 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-/**
- * useBilingual(item)
- *
- * Given a concours or emploi record from the API, returns the correct set of
- * display fields based on the active i18n language.
- *
- * Field resolution priority (per language):
- *   Arabic  → titre_ar  > titre  (safe fallback)
- *   French  → titre     > titre_ar (safe fallback)
- *
- * Always returns plain strings — never undefined or null.
- */
-export default function useBilingual(item) {
-  const { i18n } = useTranslation();
-  const isAr = i18n.language?.startsWith('ar');
-
+export function getBilingual(item, isAr) {
   if (!item) return {};
 
   const fr = {
@@ -33,4 +18,11 @@ export default function useBilingual(item) {
   };
 
   return isAr ? ar : fr;
+}
+
+export default function useBilingual(item) {
+  const { i18n } = useTranslation();
+  const isAr = i18n.language?.startsWith('ar');
+
+  return getBilingual(item, isAr);
 }

@@ -78,3 +78,43 @@
     at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
     at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4131:29)
     at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+2026-06-27T16:00:00.077Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-27T16:00:00.077Z.
+2026-06-27T16:00:00.094Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-27T16:00:00.093Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-27T16:00:00.093Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-27T16:09:18.958Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-27T16:09:18.958Z [CRON AUTOMATION] Finished anapec scraper in 558855ms: {"added":208,"errors":0}
+2026-06-27T16:09:52.802Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-27T16:09:52.802Z [CRON AUTOMATION] Finished jobs scraper in 33844ms: {"added":0,"errors":0}
+2026-06-27T16:10:53.547Z [CRON AUTOMATION] Finished concours scraper in 60745ms: {"added":10,"errors":0,"skipped":0}
+2026-06-27T16:10:53.622Z [CRON AUTOMATION] Automated scraper pipeline completed in 653529ms.
+2026-06-27T16:10:53.622Z [CRON AUTOMATION] Database flush failed after scraper pipeline: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range. It must be >= 0 && <= 17825792. Received 17825794
+    at validateOffset (node:buffer:136:3)
+    at Buffer.write (node:buffer:1199:5)
+    at Object.encodeUTF8Into (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:320:58)
+    at serializeString (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3562:44)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4109:25)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3920:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4131:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+2026-06-27T17:00:00.028Z [CRON AUTOMATION] Hourly cron woke up at 2026-06-27T17:00:00.028Z.
+2026-06-27T17:00:00.030Z [CRON AUTOMATION] Starting anapec scraper.
+2026-06-27T17:00:00.029Z [CRON AUTOMATION] Triggering automated scraper pipeline at 2026-06-27T17:00:00.029Z (trigger=hourly-cron, sources=anapec,jobs,concours, force=false)
+2026-06-27T17:00:53.069Z [CRON AUTOMATION] Starting jobs scraper.
+2026-06-27T17:00:53.069Z [CRON AUTOMATION] Finished anapec scraper in 53039ms: {"added":0,"errors":0}
+2026-06-27T17:01:28.922Z [CRON AUTOMATION] Starting concours scraper.
+2026-06-27T17:01:28.922Z [CRON AUTOMATION] Finished jobs scraper in 35853ms: {"added":0,"errors":0}
+2026-06-27T17:05:53.304Z [CRON AUTOMATION] Finished concours scraper in 264382ms: {"added":0,"errors":0}
+2026-06-27T17:05:53.566Z [CRON AUTOMATION] Automated scraper pipeline completed in 353537ms.
+2026-06-27T17:05:53.566Z [CRON AUTOMATION] Database flush failed after scraper pipeline: RangeError [ERR_OUT_OF_RANGE]: The value of "offset" is out of range. It must be >= 0 && <= 17825792. Received 17825794
+    at validateOffset (node:buffer:136:3)
+    at Buffer.write (node:buffer:1199:5)
+    at Object.encodeUTF8Into (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:320:58)
+    at serializeString (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3562:44)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4109:25)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3920:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)
+    at serializeInto (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:4131:29)
+    at serializeObject (C:\Users\pc\.gemini\antigravity\scratch\atlasconcours\node_modules\bson\lib\bson.cjs:3710:22)

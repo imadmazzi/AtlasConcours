@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api';
 import { T } from './T';
-import useBilingual from '../hooks/useBilingual';
+import { getBilingual } from '../hooks/useBilingual';
+import { useTranslation } from 'react-i18next';
 
 const BADGE_MAP = {
   'Sécurité': 'securite', 'Éducation': 'education', 'Santé': 'sante',
@@ -20,6 +21,8 @@ function formatDate(d) {
 export default function LatestConcours() {
   const [concours, setConcours] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { i18n } = useTranslation();
+  const isAr = i18n.language?.startsWith('ar');
 
   useEffect(() => {
     api.get('/concours?limit=6').then(res => {
@@ -39,7 +42,7 @@ export default function LatestConcours() {
         {!loading && concours.length === 0 && <div className="empty-state"><i className="fa fa-clipboard-list"></i><p>Aucun concours disponible.</p></div>}
         <div className="cards-grid">
           {!loading && concours.map(c => {
-            const bl = useBilingual(c); // eslint-disable-line react-hooks/rules-of-hooks
+            const bl = getBilingual(c, isAr);
             return (
             <div key={c.id} className="card">
               <div className="card-top">
