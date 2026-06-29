@@ -131,12 +131,12 @@ export default function ConcoursDetailPage() {
             </span>
             <span className="chip chip-accent">
               <i className="fa fa-graduation-cap"></i>
-              {concours.categorie || 'Concours Public'}
+              {stripHtml(concours.categorie) || 'Concours Public'}
             </span>
           </div>
 
           {/* Title */}
-          <h1 className="concours-hero-title">{bl.titre}</h1>
+          <h1 className="concours-hero-title">{stripHtml(bl.titre)}</h1>
 
           {/* Meta chips grid */}
           <div className="concours-meta-grid">
@@ -145,7 +145,7 @@ export default function ConcoursDetailPage() {
                 <span className="meta-chip-icon"><i className="fa fa-landmark"></i></span>
                 <div>
                   <span className="meta-chip-label">Organisme</span>
-                  <span className="meta-chip-value">{organisme}</span>
+                  <span className="meta-chip-value">{stripHtml(organisme)}</span>
                 </div>
               </div>
             )}
@@ -154,7 +154,7 @@ export default function ConcoursDetailPage() {
                 <span className="meta-chip-icon"><i className="fa fa-users"></i></span>
                 <div>
                   <span className="meta-chip-label">Postes ouverts</span>
-                  <span className="meta-chip-value" style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '20px' }}>{postes}</span>
+                  <span className="meta-chip-value" style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '20px' }}>{stripHtml(postes)}</span>
                 </div>
               </div>
             )}
@@ -163,7 +163,7 @@ export default function ConcoursDetailPage() {
                 <span className="meta-chip-icon"><i className="fa fa-calendar-plus"></i></span>
                 <div>
                   <span className="meta-chip-label">Date de publication</span>
-                  <span className="meta-chip-value">{datePubli}</span>
+                  <span className="meta-chip-value">{stripHtml(datePubli)}</span>
                 </div>
               </div>
             )}
@@ -196,19 +196,19 @@ export default function ConcoursDetailPage() {
                   {postes && (
                     <div className="fact-item">
                       <span className="fact-label">Postes ouverts</span>
-                      <span className="fact-value highlight">{postes}</span>
+                      <span className="fact-value highlight">{stripHtml(postes)}</span>
                     </div>
                   )}
                   {grade && (
                     <div className="fact-item">
                       <span className="fact-label">Grade / Échelle</span>
-                      <span className="fact-value">{grade}</span>
+                      <span className="fact-value">{stripHtml(grade)}</span>
                     </div>
                   )}
                   {diplome && (
                     <div className="fact-item">
                       <span className="fact-label">Diplôme requis</span>
-                      <span className="fact-value">{diplome}</span>
+                      <span className="fact-value">{stripHtml(diplome)}</span>
                     </div>
                   )}
                 </div>
@@ -230,18 +230,18 @@ export default function ConcoursDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {organisme && <tr><td>Administration / Organisme</td><td><strong>{organisme}</strong></td></tr>}
-                    {grade && <tr><td>Grade / Échelle</td><td><strong>{grade}</strong></td></tr>}
-                    {postes && <tr><td>Postes ouverts</td><td><strong>{postes}</strong></td></tr>}
-                    {diplome && <tr><td>Diplôme requis</td><td><strong>{diplome}</strong></td></tr>}
-                    {datePubli && <tr><td>Date de publication</td><td><strong>{datePubli}</strong></td></tr>}
+                    {organisme && <tr><td>Administration / Organisme</td><td><strong>{stripHtml(organisme)}</strong></td></tr>}
+                    {grade && <tr><td>Grade / Échelle</td><td><strong>{stripHtml(grade)}</strong></td></tr>}
+                    {postes && <tr><td>Postes ouverts</td><td><strong>{stripHtml(postes)}</strong></td></tr>}
+                    {diplome && <tr><td>Diplôme requis</td><td><strong>{stripHtml(diplome)}</strong></td></tr>}
+                    {datePubli && <tr><td>Date de publication</td><td><strong>{stripHtml(datePubli)}</strong></td></tr>}
                     <tr><td>Date limite</td><td><strong>{formatDate(concours.date_limite)}</strong></td></tr>
                   </tbody>
                 </table>
                 
                 {bl.description && (
                   <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
-                    {bl.description}
+                    {stripHtml(bl.description)}
                   </p>
                 )}
               </div>

@@ -90,6 +90,8 @@ export default function JobDetailPage() {
     postes = '';
   }
 
+  const stripHtml = (html) => html ? String(html).replace(/<[^>]*>?/gm, '').trim() : '';
+
   return (
     <main className="page-job-detail">
       {/* HEADER HERO */}
@@ -108,29 +110,29 @@ export default function JobDetailPage() {
               Réf: {job.id || 'N/A'}
             </span>
             <span className="badge badge-administration" style={{ background: 'var(--accent)', color: 'white' }}>
-              {job.organisme || job.categorie || 'Secteur Public / Privé'}
+              {stripHtml(job.organisme || job.categorie || 'Secteur Public / Privé')}
             </span>
             {extracted.contrat && (
               <span className="badge badge-securite" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
                 <i className="fa fa-file-contract" style={{ marginRight: '6px' }}></i>
-                {extracted.contrat}
+                {stripHtml(extracted.contrat)}
               </span>
             )}
           </div>
 
-          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{bl.titre}</h1>
+          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl.titre)}</h1>
           
           <div className="page-header-meta" style={{ gap: '24px' }}>
             {(job.entreprise || job.organisme) && (
               <div className="meta-item" style={{ fontSize: '16px' }}>
                 <i className="fa fa-building"></i>
-                <strong>{job.entreprise || job.organisme}</strong>
+                <strong>{stripHtml(job.entreprise || job.organisme)}</strong>
               </div>
             )}
             {(job.localisation || job.ville) && (
               <div className="meta-item" style={{ fontSize: '16px' }}>
                 <i className="fa fa-map-marker-alt"></i>
-                {job.localisation || job.ville}
+                {stripHtml(job.localisation || job.ville)}
               </div>
             )}
             <div className="meta-item" style={{ fontSize: '16px', color: 'var(--accent)' }}>
@@ -157,19 +159,19 @@ export default function JobDetailPage() {
                   {extracted.salaire && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Salaire</span>
-                      <strong>{extracted.salaire}</strong>
+                      <strong>{stripHtml(extracted.salaire)}</strong>
                     </div>
                   )}
                   {extracted.experience && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Expérience</span>
-                      <strong>{extracted.experience}</strong>
+                      <strong>{stripHtml(extracted.experience)}</strong>
                     </div>
                   )}
                   {extracted.formation && (
                     <div>
                       <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '4px' }}>Formation requise</span>
-                      <strong>{extracted.formation}</strong>
+                      <strong>{stripHtml(extracted.formation)}</strong>
                     </div>
                   )}
                 </div>
@@ -191,19 +193,19 @@ export default function JobDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {(job.entreprise || job.organisme) && <tr><td>Entreprise / Administration</td><td><strong>{job.entreprise || job.organisme}</strong></td></tr>}
-                    {extracted.contrat && <tr><td>Type de contrat</td><td><strong>{extracted.contrat}</strong></td></tr>}
-                    {extracted.salaire && <tr><td>Salaire</td><td><strong>{extracted.salaire}</strong></td></tr>}
-                    {extracted.experience && <tr><td>Expérience professionnelle</td><td><strong>{extracted.experience}</strong></td></tr>}
-                    {diplome && <tr><td>Formation / Diplôme requis</td><td><strong>{diplome}</strong></td></tr>}
-                    {(job.localisation || job.ville) && <tr><td>Localisation</td><td><strong>{job.localisation || job.ville}</strong></td></tr>}
+                    {(job.entreprise || job.organisme) && <tr><td>Entreprise / Administration</td><td><strong>{stripHtml(job.entreprise || job.organisme)}</strong></td></tr>}
+                    {extracted.contrat && <tr><td>Type de contrat</td><td><strong>{stripHtml(extracted.contrat)}</strong></td></tr>}
+                    {extracted.salaire && <tr><td>Salaire</td><td><strong>{stripHtml(extracted.salaire)}</strong></td></tr>}
+                    {extracted.experience && <tr><td>Expérience professionnelle</td><td><strong>{stripHtml(extracted.experience)}</strong></td></tr>}
+                    {diplome && <tr><td>Formation / Diplôme requis</td><td><strong>{stripHtml(diplome)}</strong></td></tr>}
+                    {(job.localisation || job.ville) && <tr><td>Localisation</td><td><strong>{stripHtml(job.localisation || job.ville)}</strong></td></tr>}
                     <tr><td>Date limite</td><td><strong>{formatDate(job.date_limite || job.deadline)}</strong></td></tr>
                   </tbody>
                 </table>
                 
                 {bl.description && (
                   <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
-                    {bl.description}
+                    {stripHtml(bl.description)}
                   </p>
                 )}
               </div>
