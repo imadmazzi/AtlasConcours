@@ -23,22 +23,28 @@ function formatDate(d) {
  */
 function extractMeta(html) {
   if (!html) return {};
-  const text = html.replace(/<[^>]*>/gm, ' ').replace(/\s+/g, ' ');
+  // Preserve line breaks for regex matching before removing tags
+  let text = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+    .replace(/<[^>]*>/gm, ' ')
+    .replace(/[ \t]+/g, ' ') // Collapse spaces/tabs only
+    .replace(/\n\s*\n/g, '\n'); // Collapse multiple newlines
 
   const grab = (re) => {
     const m = text.match(re);
-    return m ? m[1].trim() : null;
+    return m ? m[1].trim().replace(/^[:\-\s]+|[:\-\s]+$/g, '') : null;
   };
 
   return {
     postes:          grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i) || grab(/(\d{1,4})\s+postes?/i),
-    grade:           grab(/(?:Grade|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    echelle:         grab(/(?:Échelle|Echelon)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{1,40}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    ministere:       grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    diplome:         grab(/(?:Dipl[oô]me|Formation|Niveau\s+requis)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    grade:           grab(/(?:Grade|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,80}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    echelle:         grab(/(?:Échelle|Echelon)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{1,40}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    ministere:       grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    diplome:         grab(/(?:Dipl[oô]me|Formation|Niveau\s+requis)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
     datePubli:       grab(/(?:Date\s+de\s+publication|Publié\s+le|Publication)[\s:–\-]*([0-9\/\-][\w \/\-éûùàâ]{4,30})/i),
-    typeRecrutement: grab(/(?:Type\s+de\s+recrutement|Type\s+de\s+concours|Recrutement)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    specialite:      grab(/(?:Spécialité|Option|Filière|Domaine)[\s:–\-]*([^|<\n]{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    typeRecrutement: grab(/(?:Type\s+de\s+recrutement|Type\s+de\s+concours|Recrutement)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    specialite:      grab(/(?:Spécialité|Option|Filière|Domaine)[\s:–\-]*([^|<\n]{3,60}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
   };
 }
 

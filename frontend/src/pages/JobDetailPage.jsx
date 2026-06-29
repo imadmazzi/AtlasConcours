@@ -15,12 +15,17 @@ function formatDate(d) {
 function extractJobData(html) {
   if (!html) return {};
   
-  // Strip tags for easier regex matching
-  const text = html.replace(/<[^>]*>?/gm, ' ');
+  // Preserve line breaks for regex matching before removing tags
+  let text = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+    .replace(/<[^>]*>/gm, ' ')
+    .replace(/[ \t]+/g, ' ') // Collapse spaces/tabs only
+    .replace(/\n\s*\n/g, '\n'); // Collapse multiple newlines
   
   const extractMatch = (regex) => {
     const match = text.match(regex);
-    return match ? match[1].trim().replace(/\s+/g, ' ') : null;
+    return match ? match[1].trim().replace(/^[:\-\s]+|[:\-\s]+$/g, '') : null;
   };
 
   return {
