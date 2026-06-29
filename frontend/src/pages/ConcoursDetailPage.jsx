@@ -30,13 +30,14 @@ function extractMeta(html) {
   };
 
   return {
-    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i) || grab(/(\d{1,4})\s+postes?/i),
-    grade:      grab(/(?:Grade|Échelle|Echelon|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    ministere:  grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    diplome:    grab(/(?:Dipl[oô]me|Formation|Niveau\s+requis)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    datePubli:  grab(/(?:Date\s+de\s+publication|Publié\s+le|Publication)[\s:–\-]*([0-9\/\-][\w \/\-éûùàâ]{4,30})/i),
+    postes:          grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i) || grab(/(\d{1,4})\s+postes?/i),
+    grade:           grab(/(?:Grade|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    echelle:         grab(/(?:Échelle|Echelon)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{1,40}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    ministere:       grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    diplome:         grab(/(?:Dipl[oô]me|Formation|Niveau\s+requis)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    datePubli:       grab(/(?:Date\s+de\s+publication|Publié\s+le|Publication)[\s:–\-]*([0-9\/\-][\w \/\-éûùàâ]{4,30})/i),
     typeRecrutement: grab(/(?:Type\s+de\s+recrutement|Type\s+de\s+concours|Recrutement)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    specialite: grab(/(?:Spécialité|Option|Filière|Domaine)[\s:–\-]*([^|<\n]{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i)
+    specialite:      grab(/(?:Spécialité|Option|Filière|Domaine)[\s:–\-]*([^|<\n]{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
   };
 }
 
@@ -93,12 +94,13 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
-  let meta = {}, organisme, postes, grade, diplome, datePubli, typeRecrutement, specialite;
+  let meta = {}, organisme, postes, grade, echelle, diplome, datePubli, typeRecrutement, specialite;
   try {
     meta = extractMeta(bl.texte_complet || bl.description) || {};
     organisme = concours.organisme || meta.ministere;
     postes    = concours.postes || meta.postes;
     grade     = meta.grade;
+    echelle   = meta.echelle;
     diplome   = bl.diplome || meta.diplome;
     datePubli = meta.datePubli;
     typeRecrutement = meta.typeRecrutement;
@@ -108,6 +110,7 @@ export default function ConcoursDetailPage() {
     organisme = concours.organisme || '';
     postes = concours.postes || '';
     grade = '';
+    echelle = '';
     diplome = '';
     datePubli = '';
     typeRecrutement = '';
@@ -193,53 +196,59 @@ export default function ConcoursDetailPage() {
                 Description de l'annonce
               </h2>
               
-              <div className="photo-table-container">
-                <table className="photo-table">
+              <div className="desc-info-table">
+                <table>
                   <tbody>
-                    <tr className="photo-table-urgent">
-                      <td><i className="fa fa-calendar-alt photo-table-icon"></i>Date limite</td>
-                      <td>{formatDate(concours.date_limite)}</td>
+                    <tr className="info-row-urgent">
+                      <td className="info-label"><i className="fa fa-calendar-alt info-icon"></i>Date limite</td>
+                      <td className="info-value">{formatDate(concours.date_limite)}</td>
                     </tr>
                     {organisme && (
-                      <tr>
-                        <td><i className="fa fa-building photo-table-icon"></i>Organisme</td>
-                        <td>{stripHtml(organisme)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-building info-icon"></i>Organisme</td>
+                        <td className="info-value">{stripHtml(organisme)}</td>
                       </tr>
                     )}
                     {grade && (
-                      <tr>
-                        <td><i className="fa fa-user photo-table-icon"></i>Grade</td>
-                        <td>{stripHtml(grade)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-user-tie info-icon"></i>Grade</td>
+                        <td className="info-value">{stripHtml(grade)}</td>
+                      </tr>
+                    )}
+                    {echelle && (
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-layer-group info-icon"></i>Échelle</td>
+                        <td className="info-value">{stripHtml(echelle)}</td>
                       </tr>
                     )}
                     {typeRecrutement && (
-                      <tr>
-                        <td><i className="fa fa-bullseye photo-table-icon"></i>Type de concours</td>
-                        <td>{stripHtml(typeRecrutement)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-bullseye info-icon"></i>Type de concours</td>
+                        <td className="info-value">{stripHtml(typeRecrutement)}</td>
                       </tr>
                     )}
                     {specialite && (
-                      <tr>
-                        <td><i className="fa fa-book photo-table-icon"></i>Spécialité</td>
-                        <td>{stripHtml(specialite)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-book info-icon"></i>Spécialité</td>
+                        <td className="info-value">{stripHtml(specialite)}</td>
                       </tr>
                     )}
                     {diplome && (
-                      <tr>
-                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Diplôme</td>
-                        <td>{stripHtml(diplome)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-graduation-cap info-icon"></i>Diplôme requis</td>
+                        <td className="info-value">{stripHtml(diplome)}</td>
                       </tr>
                     )}
                     {postes && (
-                      <tr>
-                        <td><i className="fa fa-users photo-table-icon"></i>Nombre de postes</td>
-                        <td>{stripHtml(postes)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-users info-icon"></i>Nombre de postes</td>
+                        <td className="info-value">{stripHtml(postes)}</td>
                       </tr>
                     )}
                     {datePubli && (
-                      <tr>
-                        <td><i className="fa fa-clock photo-table-icon"></i>Date de publication</td>
-                        <td>{stripHtml(datePubli)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-clock info-icon"></i>Date de publication</td>
+                        <td className="info-value">{stripHtml(datePubli)}</td>
                       </tr>
                     )}
                   </tbody>

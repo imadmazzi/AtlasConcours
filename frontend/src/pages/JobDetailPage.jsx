@@ -188,65 +188,65 @@ export default function JobDetailPage() {
                 Description de l'annonce
               </h2>
               
-              <div className="photo-table-container">
-                <table className="photo-table">
+              <div className="desc-info-table">
+                <table>
                   <tbody>
-                    <tr className="photo-table-urgent">
-                      <td><i className="fa fa-calendar-alt photo-table-icon"></i>Date limite</td>
-                      <td>{formatDate(job.date_limite || job.deadline)}</td>
+                    <tr className="info-row-urgent">
+                      <td className="info-label"><i className="fa fa-calendar-alt info-icon"></i>Date limite</td>
+                      <td className="info-value">{formatDate(job.date_limite || job.deadline)}</td>
                     </tr>
                     {(job.entreprise || job.organisme) && (
-                      <tr>
-                        <td><i className="fa fa-building photo-table-icon"></i>Entreprise / Organisme</td>
-                        <td>{stripHtml(job.entreprise || job.organisme)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-building info-icon"></i>Entreprise / Organisme</td>
+                        <td className="info-value">{stripHtml(job.entreprise || job.organisme)}</td>
                       </tr>
                     )}
                     {extracted.typeRecrutement && (
-                      <tr>
-                        <td><i className="fa fa-bullseye photo-table-icon"></i>Type de concours</td>
-                        <td>{stripHtml(extracted.typeRecrutement)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-bullseye info-icon"></i>Type de concours</td>
+                        <td className="info-value">{stripHtml(extracted.typeRecrutement)}</td>
                       </tr>
                     )}
                     {extracted.specialite && (
-                      <tr>
-                        <td><i className="fa fa-book photo-table-icon"></i>Spécialité</td>
-                        <td>{stripHtml(extracted.specialite)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-book info-icon"></i>Spécialité</td>
+                        <td className="info-value">{stripHtml(extracted.specialite)}</td>
                       </tr>
                     )}
                     {extracted.contrat && (
-                      <tr>
-                        <td><i className="fa fa-file-contract photo-table-icon"></i>Type de contrat</td>
-                        <td>{stripHtml(extracted.contrat)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-file-contract info-icon"></i>Type de contrat</td>
+                        <td className="info-value">{stripHtml(extracted.contrat)}</td>
                       </tr>
                     )}
                     {extracted.salaire && (
-                      <tr>
-                        <td><i className="fa fa-money-bill-wave photo-table-icon"></i>Salaire</td>
-                        <td>{stripHtml(extracted.salaire)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-money-bill-wave info-icon"></i>Salaire</td>
+                        <td className="info-value">{stripHtml(extracted.salaire)}</td>
                       </tr>
                     )}
                     {extracted.experience && (
-                      <tr>
-                        <td><i className="fa fa-briefcase photo-table-icon"></i>Expérience professionnelle</td>
-                        <td>{stripHtml(extracted.experience)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-briefcase info-icon"></i>Expérience professionnelle</td>
+                        <td className="info-value">{stripHtml(extracted.experience)}</td>
                       </tr>
                     )}
                     {postes && (
-                      <tr>
-                        <td><i className="fa fa-users photo-table-icon"></i>Nombre de postes</td>
-                        <td>{stripHtml(postes)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-users info-icon"></i>Nombre de postes</td>
+                        <td className="info-value">{stripHtml(postes)}</td>
                       </tr>
                     )}
                     {diplome && (
-                      <tr>
-                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Formation / Diplôme</td>
-                        <td>{stripHtml(diplome)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-graduation-cap info-icon"></i>Formation / Diplôme</td>
+                        <td className="info-value">{stripHtml(diplome)}</td>
                       </tr>
                     )}
                     {(job.localisation || job.ville) && (
-                      <tr>
-                        <td><i className="fa fa-map-marker-alt photo-table-icon"></i>Localisation</td>
-                        <td>{stripHtml(job.localisation || job.ville)}</td>
+                      <tr className="info-row">
+                        <td className="info-label"><i className="fa fa-map-marker-alt info-icon"></i>Localisation</td>
+                        <td className="info-value">{stripHtml(job.localisation || job.ville)}</td>
                       </tr>
                     )}
                   </tbody>
