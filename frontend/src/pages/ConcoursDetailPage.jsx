@@ -45,6 +45,9 @@ export default function ConcoursDetailPage() {
   const [error, setError] = useState(false);
   const { i18n } = useTranslation();
 
+  // Hook must be called unconditionally (Rules of Hooks)
+  const bl = useBilingual(concours);
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [id]);
@@ -87,15 +90,22 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
-  const bl = useBilingual(concours);
-  const meta = extractMeta(bl.texte_complet);
-
-  // Merge API fields with regex-extracted fallbacks
-  const organisme = concours.organisme || meta.ministere;
-  const postes    = concours.postes || meta.postes;
-  const grade     = meta.grade;
-  const diplome   = bl.diplome || meta.diplome;
-  const datePubli = meta.datePubli;
+  let meta = {}, organisme, postes, grade, diplome, datePubli;
+  try {
+    meta = extractMeta(bl.texte_complet) || {};
+    organisme = concours.organisme || meta.ministere;
+    postes    = concours.postes || meta.postes;
+    grade     = meta.grade;
+    diplome   = bl.diplome || meta.diplome;
+    datePubli = meta.datePubli;
+  } catch (e) {
+    console.error('ConcoursDetailPage data extraction error:', e);
+    organisme = concours.organisme || '';
+    postes = concours.postes || '';
+    grade = '';
+    diplome = '';
+    datePubli = '';
+  }
 
   return (
     <main className="page-job-detail">

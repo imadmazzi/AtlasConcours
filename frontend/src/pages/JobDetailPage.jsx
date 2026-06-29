@@ -11,8 +11,6 @@ function formatDate(d) {
   return isNaN(date) ? d : date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
-// cleanJobHTML removed as we no longer render raw HTML
-
 function extractJobData(html) {
   if (!html) return {};
   
@@ -39,6 +37,9 @@ export default function JobDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const { i18n } = useTranslation();
+
+  // Hook must be called unconditionally (Rules of Hooks)
+  const bl = useBilingual(job);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -77,11 +78,17 @@ export default function JobDetailPage() {
     </div>
   );
 
-  // DOMPurify removed
-  const bl = useBilingual(job);
-  const extracted = extractJobData(bl.texte_complet);
-  const diplome = bl.diplome || extracted.formation;
-  const postes  = job.postes || extracted.postes;
+  let extracted = {}, diplome, postes;
+  try {
+    extracted = extractJobData(bl.texte_complet) || {};
+    diplome = bl.diplome || extracted.formation;
+    postes  = job.postes || extracted.postes;
+  } catch (e) {
+    console.error('JobDetailPage data extraction error:', e);
+    extracted = {};
+    diplome = '';
+    postes = '';
+  }
 
   return (
     <main className="page-job-detail">
