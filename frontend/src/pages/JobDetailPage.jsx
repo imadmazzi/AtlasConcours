@@ -180,97 +180,77 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Description (Modern Info Card) */}
+            {/* Description (Photo Matched Layout) */}
             <div className="card concours-desc-card">
-              <h2 className="card-section-title">
+              <h2 className="card-section-title" style={{ marginBottom: '20px' }}>
                 <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'annonce
+                Description de l'annonce
               </h2>
-              <div className="modern-info-list">
-                {(job.entreprise || job.organisme) && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-building"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Entreprise / Administration</span>
-                      <span className="modern-info-value">{stripHtml(job.entreprise || job.organisme)}</span>
-                    </div>
-                  </div>
-                )}
-                {extracted.contrat && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-file-contract"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Type de contrat</span>
-                      <span className="modern-info-value">{stripHtml(extracted.contrat)}</span>
-                    </div>
-                  </div>
-                )}
-                {extracted.salaire && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-money-bill-wave"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Salaire</span>
-                      <span className="modern-info-value value-badge">{stripHtml(extracted.salaire)}</span>
-                    </div>
-                  </div>
-                )}
-                {extracted.experience && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-briefcase"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Expérience professionnelle</span>
-                      <span className="modern-info-value">{stripHtml(extracted.experience)}</span>
-                    </div>
-                  </div>
-                )}
-                {diplome && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-graduation-cap"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Formation / Diplôme requis</span>
-                      <span className="modern-info-value">{stripHtml(diplome)}</span>
-                    </div>
-                  </div>
-                )}
-                {(job.localisation || job.ville) && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-map-marker-alt"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Localisation</span>
-                      <span className="modern-info-value">{stripHtml(job.localisation || job.ville)}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="modern-info-row urgent">
-                  <div className="modern-info-icon"><i className="fa fa-clock"></i></div>
-                  <div className="modern-info-text">
-                    <span className="modern-info-label">Date limite</span>
-                    <span className="modern-info-value">{formatDate(job.date_limite || job.deadline)}</span>
-                  </div>
-                </div>
+              
+              <div className="photo-table-container">
+                <table className="photo-table">
+                  <tbody>
+                    <tr className="photo-table-urgent">
+                      <td><i className="fa fa-calendar-alt photo-table-icon"></i>Date limite</td>
+                      <td>{formatDate(job.date_limite || job.deadline)}</td>
+                    </tr>
+                    {(job.entreprise || job.organisme) && (
+                      <tr>
+                        <td><i className="fa fa-building photo-table-icon"></i>Entreprise / Organisme</td>
+                        <td>{stripHtml(job.entreprise || job.organisme)}</td>
+                      </tr>
+                    )}
+                    {extracted.contrat && (
+                      <tr>
+                        <td><i className="fa fa-file-contract photo-table-icon"></i>Type de contrat</td>
+                        <td>{stripHtml(extracted.contrat)}</td>
+                      </tr>
+                    )}
+                    {extracted.salaire && (
+                      <tr>
+                        <td><i className="fa fa-money-bill-wave photo-table-icon"></i>Salaire</td>
+                        <td>{stripHtml(extracted.salaire)}</td>
+                      </tr>
+                    )}
+                    {extracted.experience && (
+                      <tr>
+                        <td><i className="fa fa-briefcase photo-table-icon"></i>Expérience professionnelle</td>
+                        <td>{stripHtml(extracted.experience)}</td>
+                      </tr>
+                    )}
+                    {diplome && (
+                      <tr>
+                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Formation / Diplôme</td>
+                        <td>{stripHtml(diplome)}</td>
+                      </tr>
+                    )}
+                    {(job.localisation || job.ville) && (
+                      <tr>
+                        <td><i className="fa fa-map-marker-alt photo-table-icon"></i>Localisation</td>
+                        <td>{stripHtml(job.localisation || job.ville)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </div>
 
-            {/* Annonce Scraped Content */}
-            {bl.texte_complet && (
-              <div className="card" style={{ padding: '32px' }}>
-                <h2 className="card-section-title" style={{ marginBottom: '24px' }}>
-                  <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                  Annonce
-                </h2>
-                <div 
-                  className="raw-annonce-content"
-                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
-                  ref={(el) => {
-                    if (el) {
-                      el.querySelectorAll('img').forEach(img => {
-                        img.onerror = () => { img.style.display = 'none'; };
-                      });
-                    }
-                  }}
-                />
-              </div>
-            )}
+              {bl.texte_complet && (
+                <div style={{ marginTop: '32px' }}>
+                  <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
+                  <div 
+                    className="raw-annonce-content"
+                    dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                    ref={(el) => {
+                      if (el) {
+                        el.querySelectorAll('img').forEach(img => {
+                          img.onerror = () => { img.style.display = 'none'; };
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">

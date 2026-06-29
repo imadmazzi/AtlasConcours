@@ -217,88 +217,71 @@ export default function ConcoursDetailPage() {
               </div>
             )}
             
-            {/* Description (Modern Info Card) */}
+            {/* Description (Photo Matched Layout) */}
             <div className="card concours-desc-card">
-              <h2 className="card-section-title">
+              <h2 className="card-section-title" style={{ marginBottom: '20px' }}>
                 <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Détails de l'annonce
+                Description de l'annonce
               </h2>
-              <div className="modern-info-list">
-                {organisme && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-landmark"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Administration / Organisme</span>
-                      <span className="modern-info-value">{stripHtml(organisme)}</span>
-                    </div>
-                  </div>
-                )}
-                {grade && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-layer-group"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Grade / Échelle</span>
-                      <span className="modern-info-value">{stripHtml(grade)}</span>
-                    </div>
-                  </div>
-                )}
-                {postes && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-users"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Postes ouverts</span>
-                      <span className="modern-info-value value-badge">{stripHtml(postes)}</span>
-                    </div>
-                  </div>
-                )}
-                {diplome && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-graduation-cap"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Diplôme requis</span>
-                      <span className="modern-info-value">{stripHtml(diplome)}</span>
-                    </div>
-                  </div>
-                )}
-                {datePubli && (
-                  <div className="modern-info-row">
-                    <div className="modern-info-icon"><i className="fa fa-calendar-plus"></i></div>
-                    <div className="modern-info-text">
-                      <span className="modern-info-label">Date de publication</span>
-                      <span className="modern-info-value">{stripHtml(datePubli)}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="modern-info-row urgent">
-                  <div className="modern-info-icon"><i className="fa fa-clock"></i></div>
-                  <div className="modern-info-text">
-                    <span className="modern-info-label">Date limite</span>
-                    <span className="modern-info-value">{formatDate(concours.date_limite)}</span>
-                  </div>
-                </div>
+              
+              <div className="photo-table-container">
+                <table className="photo-table">
+                  <tbody>
+                    <tr className="photo-table-urgent">
+                      <td><i className="fa fa-calendar-alt photo-table-icon"></i>Date limite</td>
+                      <td>{formatDate(concours.date_limite)}</td>
+                    </tr>
+                    {organisme && (
+                      <tr>
+                        <td><i className="fa fa-building photo-table-icon"></i>Organisme</td>
+                        <td>{stripHtml(organisme)}</td>
+                      </tr>
+                    )}
+                    {grade && (
+                      <tr>
+                        <td><i className="fa fa-user photo-table-icon"></i>Grade</td>
+                        <td>{stripHtml(grade)}</td>
+                      </tr>
+                    )}
+                    {diplome && (
+                      <tr>
+                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Spécialité / Diplôme</td>
+                        <td>{stripHtml(diplome)}</td>
+                      </tr>
+                    )}
+                    {postes && (
+                      <tr>
+                        <td><i className="fa fa-users photo-table-icon"></i>Nombre de postes</td>
+                        <td>{stripHtml(postes)}</td>
+                      </tr>
+                    )}
+                    {datePubli && (
+                      <tr>
+                        <td><i className="fa fa-clock photo-table-icon"></i>Date de publication</td>
+                        <td>{stripHtml(datePubli)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            </div>
 
-            {/* Annonce Scraped Content */}
-            {bl.texte_complet && (
-              <div className="card" style={{ padding: '32px' }}>
-                <h2 className="card-section-title" style={{ marginBottom: '24px' }}>
-                  <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                  Annonce
-                </h2>
-                <div 
-                  className="raw-annonce-content"
-                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
-                  ref={(el) => {
-                    if (el) {
-                      el.querySelectorAll('img').forEach(img => {
-                        img.onerror = () => { img.style.display = 'none'; };
-                      });
-                    }
-                  }}
-                />
-              </div>
-            )}
+              {bl.texte_complet && (
+                <div style={{ marginTop: '32px' }}>
+                  <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
+                  <div 
+                    className="raw-annonce-content"
+                    dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                    ref={(el) => {
+                      if (el) {
+                        el.querySelectorAll('img').forEach(img => {
+                          img.onerror = () => { img.style.display = 'none'; };
+                        });
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">

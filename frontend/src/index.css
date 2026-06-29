@@ -2066,83 +2066,44 @@ footer {
   height: auto;
 }
 
-/* ── Modern Info List ── */
-.modern-info-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 12px;
-}
-.modern-info-row {
-  display: flex;
-  align-items: center;
-  padding: 12px;
-  background-color: #f8fafc;
+/* ── Photo Match Table ── */
+.photo-table-container {
+  border: 1px solid #f1f5f9;
   border-radius: 8px;
-  border: 1px solid transparent;
-  transition: all 0.2s ease;
+  overflow: hidden;
+  margin-bottom: 24px;
 }
-.modern-info-row:hover {
-  background-color: #fff;
-  border-color: #e2e8f0;
-  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+.photo-table {
+  width: 100%;
+  border-collapse: collapse;
 }
-.modern-info-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background-color: rgba(37, 99, 235, 0.08);
-  color: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.photo-table tr:not(:last-child) {
+  border-bottom: 1px solid #f1f5f9;
+}
+.photo-table td {
+  padding: 14px 16px;
   font-size: 14px;
-  margin-right: 12px;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
+  color: #334155;
+  vertical-align: middle;
 }
-.modern-info-row:hover .modern-info-icon {
-  background-color: var(--primary);
-  color: #fff;
+.photo-table td:first-child {
+  width: 40%;
+  font-weight: 500;
+  color: #475569;
 }
-.modern-info-text {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-.modern-info-label {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.modern-info-value {
-  font-size: 14px;
+.photo-table td:last-child {
   font-weight: 600;
-  color: var(--text);
+  color: #0f172a;
 }
-.modern-info-row.urgent .modern-info-icon {
-  background-color: rgba(220, 38, 38, 0.1);
-  color: var(--danger);
-}
-.modern-info-row.urgent:hover .modern-info-icon {
-  background-color: var(--danger);
-  color: #fff;
-}
-.modern-info-row.urgent .modern-info-value,
-.modern-info-row.urgent .modern-info-label {
-  color: var(--danger);
-}
-
-/* Important Values Badge */
-.value-badge {
+.photo-table-icon {
+  margin-right: 12px;
+  color: #64748b;
+  width: 16px;
+  text-align: center;
   display: inline-block;
-  padding: 2px 8px;
-  background-color: var(--primary-light, #e0e7ff);
-  color: var(--primary-dark, #3730a3);
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
+}
+.photo-table-urgent td:last-child {
+  color: #dc2626; /* red for date limite */
 }
 
 /* ── Raw Annonce Content (Article Style) ── */
