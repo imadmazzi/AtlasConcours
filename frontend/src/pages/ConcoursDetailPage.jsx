@@ -4,6 +4,7 @@ import api from '../api';
 import InlineFAQ, { buildConcoursFAQ } from '../components/InlineFAQ';
 import useBilingual from '../hooks/useBilingual';
 import { useTranslation } from 'react-i18next';
+import InfoCard from '../components/InfoCard';
 
 const BADGE_MAP = {
   'Sécurité': 'securite', 'Éducation': 'education', 'Santé': 'sante',
@@ -190,73 +191,23 @@ export default function ConcoursDetailPage() {
 
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '28px', padding: 0, border: 'none', background: 'transparent' }}>
 
-            <div className="card concours-desc-card" style={{ padding: '24px 28px' }}>
-              <h2 className="card-section-title" style={{ fontSize: '18px', fontWeight: '700', marginBottom: '18px', color: '#111827', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <i className="fa fa-bars" style={{ color: '#6b7280', fontSize: '16px' }}></i>
-                Description de l'annonce
-              </h2>
-              
-              <div className="desc-info-table">
-                <table>
-                  <tbody>
-                    <tr className="info-row-urgent">
-                      <td className="info-label"><i className="fa fa-calendar-alt info-icon"></i>Date limite</td>
-                      <td className="info-value">{formatDate(concours.date_limite)}</td>
-                    </tr>
-                    {organisme && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-building info-icon"></i>Organisme</td>
-                        <td className="info-value">{stripHtml(organisme)}</td>
-                      </tr>
-                    )}
-                    {grade && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-user-tie info-icon"></i>Grade</td>
-                        <td className="info-value">{stripHtml(grade)}</td>
-                      </tr>
-                    )}
-                    {echelle && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-layer-group info-icon"></i>Échelle</td>
-                        <td className="info-value">{stripHtml(echelle)}</td>
-                      </tr>
-                    )}
-                    {typeRecrutement && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-bullseye info-icon"></i>Type de concours</td>
-                        <td className="info-value">{stripHtml(typeRecrutement)}</td>
-                      </tr>
-                    )}
-                    {specialite && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-book info-icon"></i>Spécialité</td>
-                        <td className="info-value">{stripHtml(specialite)}</td>
-                      </tr>
-                    )}
-                    {diplome && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-graduation-cap info-icon"></i>Diplôme requis</td>
-                        <td className="info-value">{stripHtml(diplome)}</td>
-                      </tr>
-                    )}
-                    {postes && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-users info-icon"></i>Nombre de postes</td>
-                        <td className="info-value">{stripHtml(postes)}</td>
-                      </tr>
-                    )}
-                    {datePubli && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-clock info-icon"></i>Date de publication</td>
-                        <td className="info-value">{stripHtml(datePubli)}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <InfoCard 
+                title="Description de l'annonce"
+                fields={[
+                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(concours.date_limite), urgent: true },
+                  { icon: 'fa-building', label: 'Organisme', value: stripHtml(organisme) },
+                  { icon: 'fa-user-tie', label: 'Grade', value: stripHtml(grade) },
+                  { icon: 'fa-layer-group', label: 'Échelle', value: stripHtml(echelle) },
+                  { icon: 'fa-bullseye', label: 'Type de concours', value: stripHtml(typeRecrutement) },
+                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(specialite) },
+                  { icon: 'fa-graduation-cap', label: 'Diplôme requis', value: stripHtml(diplome) },
+                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes) },
+                  { icon: 'fa-clock', label: 'Date de publication', value: stripHtml(datePubli) }
+                ]}
+              />
 
               {(bl.texte_complet || bl.description) && (
-                <div style={{ marginTop: '32px' }}>
+                <div className="card" style={{ padding: '30px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
@@ -271,7 +222,6 @@ export default function ConcoursDetailPage() {
                   />
                 </div>
               )}
-            </div>
 
             <div className="card concours-facts-card">
               <h2 className="card-section-title">

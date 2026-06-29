@@ -2066,102 +2066,162 @@ footer {
   height: auto;
 }
 
-/* ── Description Info Table (exact reference screenshot match) ── */
-.desc-info-table {
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+/* ════════════════════════════════════════════════
+   InfoCard component  (ic-*)
+   Clean white rounded card with icon+label/value rows
+   ════════════════════════════════════════════════ */
+
+/* Card wrapper */
+.ic-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   overflow: hidden;
   margin-bottom: 0;
 }
-.desc-info-table table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
+
+/* Card heading */
+.ic-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px 16px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #111827;
+  border-bottom: 1px solid #f3f4f6;
+  margin: 0;
 }
-/* Horizontal separators between rows */
-.desc-info-table .info-row,
-.desc-info-table .info-row-urgent {
-  border-bottom: 1px solid #e2e8f0;
+.ic-title-icon {
+  color: #6b7280;
+  font-size: 15px;
 }
-.desc-info-table tbody tr:last-child {
+
+/* Rows container */
+.ic-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Single row */
+.ic-row {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background-color 0.15s ease;
+  min-height: 48px;
+}
+.ic-rows .ic-row:last-child,
+.ic-rows .ic-row--urgent:last-child {
   border-bottom: none;
 }
-/* Subtle hover on rows */
-.desc-info-table .info-row:hover {
-  background-color: #f1f5f9;
+.ic-row:hover {
+  background-color: #f9fafb;
+}
+
+/* Label side — left ~40% */
+.ic-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 16px;
+  width: 42%;
+  min-width: 0;
+  border-right: 1px solid #f3f4f6;   /* vertical separator */
+  flex-shrink: 0;
+}
+.ic-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  font-size: 12px;
+  flex-shrink: 0;
   transition: background-color 0.15s ease;
 }
-
-/* Label cell — left 40%, vertical right border = column separator */
-.desc-info-table .info-label {
-  width: 40%;
-  padding: 14px 16px;
-  font-size: 14px;
+.ic-row:hover .ic-icon {
+  background-color: #e5e7eb;
+}
+.ic-label-text {
+  font-size: 13.5px;
   font-weight: 500;
   color: #6b7280;
-  vertical-align: middle;
-  border-right: 1px solid #e2e8f0;   /* ← vertical separator */
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Value cell — right 60% */
-.desc-info-table .info-value {
-  padding: 14px 20px;
+/* Value side — right ~60% */
+.ic-value {
+  display: flex;
+  align-items: center;
+  padding: 13px 18px;
   font-size: 14px;
   font-weight: 600;
   color: #111827;
-  vertical-align: middle;
+  flex: 1;
   word-break: break-word;
+  line-height: 1.4;
 }
 
-/* Icon inside label */
-.desc-info-table .info-icon {
-  display: inline-block;
-  width: 16px;
-  margin-right: 10px;
-  text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
+/* Urgent row (Date limite) — everything in red */
+.ic-row--urgent {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid #f3f4f6;
+  min-height: 48px;
+  background-color: #fff9f9;
 }
-
-/* Date limite row — all red */
-.desc-info-table .info-row-urgent .info-label {
+.ic-row--urgent:hover {
+  background-color: #fff1f1;
+}
+.ic-row--urgent .ic-label {
+  border-right-color: #fecaca;
+}
+.ic-row--urgent .ic-icon {
+  background-color: #fee2e2;
   color: #dc2626;
 }
-.desc-info-table .info-row-urgent .info-icon {
+.ic-row--urgent .ic-label-text {
   color: #dc2626;
+  font-weight: 600;
 }
-.desc-info-table .info-row-urgent .info-value {
+.ic-row--urgent .ic-value {
   color: #dc2626;
   font-weight: 700;
 }
 
-/* Responsive: stack on very small screens */
+/* Empty state */
+.ic-empty {
+  padding: 20px;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Responsive — stack at 480px */
 @media (max-width: 480px) {
-  .desc-info-table table,
-  .desc-info-table tbody,
-  .desc-info-table .info-row,
-  .desc-info-table .info-row-urgent {
-    display: block;
+  .ic-row,
+  .ic-row--urgent {
+    flex-direction: column;
+    min-height: unset;
   }
-  .desc-info-table .info-label,
-  .desc-info-table .info-value {
-    display: block;
+  .ic-label {
     width: 100%;
     border-right: none;
-    padding: 8px 16px;
-    white-space: normal;
+    border-bottom: 1px solid #f3f4f6;
+    padding: 10px 16px 8px;
   }
-  .desc-info-table .info-label {
-    padding-bottom: 2px;
-    border-bottom: none;
-  }
-  .desc-info-table .info-value {
-    padding-top: 0;
-    padding-bottom: 12px;
+  .ic-value {
+    padding: 8px 16px 12px;
   }
 }
+
 
 /* ── Raw Annonce Content (Article Style) ── */
 .raw-annonce-content {

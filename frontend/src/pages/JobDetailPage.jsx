@@ -4,6 +4,7 @@ import api from '../api';
 import InlineFAQ, { buildJobFAQ } from '../components/InlineFAQ';
 import useBilingual from '../hooks/useBilingual';
 import { useTranslation } from 'react-i18next';
+import InfoCard from '../components/InfoCard';
 
 function formatDate(d) {
   if (!d || d === 'N/A') return "Consulter l'annonce";
@@ -181,80 +182,24 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Description (Photo Matched Layout) */}
-            <div className="card concours-desc-card" style={{ padding: '24px 28px' }}>
-              <h2 className="card-section-title" style={{ fontSize: '18px', fontWeight: '700', marginBottom: '18px', color: '#111827', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <i className="fa fa-bars" style={{ color: '#6b7280', fontSize: '16px' }}></i>
-                Description de l'annonce
-              </h2>
-              
-              <div className="desc-info-table">
-                <table>
-                  <tbody>
-                    <tr className="info-row-urgent">
-                      <td className="info-label"><i className="fa fa-calendar-alt info-icon"></i>Date limite</td>
-                      <td className="info-value">{formatDate(job.date_limite || job.deadline)}</td>
-                    </tr>
-                    {(job.entreprise || job.organisme) && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-building info-icon"></i>Entreprise / Organisme</td>
-                        <td className="info-value">{stripHtml(job.entreprise || job.organisme)}</td>
-                      </tr>
-                    )}
-                    {extracted.typeRecrutement && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-bullseye info-icon"></i>Type de concours</td>
-                        <td className="info-value">{stripHtml(extracted.typeRecrutement)}</td>
-                      </tr>
-                    )}
-                    {extracted.specialite && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-book info-icon"></i>Spécialité</td>
-                        <td className="info-value">{stripHtml(extracted.specialite)}</td>
-                      </tr>
-                    )}
-                    {extracted.contrat && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-file-contract info-icon"></i>Type de contrat</td>
-                        <td className="info-value">{stripHtml(extracted.contrat)}</td>
-                      </tr>
-                    )}
-                    {extracted.salaire && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-money-bill-wave info-icon"></i>Salaire</td>
-                        <td className="info-value">{stripHtml(extracted.salaire)}</td>
-                      </tr>
-                    )}
-                    {extracted.experience && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-briefcase info-icon"></i>Expérience professionnelle</td>
-                        <td className="info-value">{stripHtml(extracted.experience)}</td>
-                      </tr>
-                    )}
-                    {postes && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-users info-icon"></i>Nombre de postes</td>
-                        <td className="info-value">{stripHtml(postes)}</td>
-                      </tr>
-                    )}
-                    {diplome && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-graduation-cap info-icon"></i>Formation / Diplôme</td>
-                        <td className="info-value">{stripHtml(diplome)}</td>
-                      </tr>
-                    )}
-                    {(job.localisation || job.ville) && (
-                      <tr className="info-row">
-                        <td className="info-label"><i className="fa fa-map-marker-alt info-icon"></i>Localisation</td>
-                        <td className="info-value">{stripHtml(job.localisation || job.ville)}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <InfoCard 
+                title="Description de l'annonce"
+                fields={[
+                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(job.date_limite || job.deadline), urgent: true },
+                  { icon: 'fa-building', label: 'Entreprise / Organisme', value: stripHtml(job.entreprise || job.organisme) },
+                  { icon: 'fa-bullseye', label: 'Type de concours', value: stripHtml(extracted.typeRecrutement) },
+                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(extracted.specialite) },
+                  { icon: 'fa-file-contract', label: 'Type de contrat', value: stripHtml(extracted.contrat) },
+                  { icon: 'fa-money-bill-wave', label: 'Salaire', value: stripHtml(extracted.salaire) },
+                  { icon: 'fa-briefcase', label: 'Expérience professionnelle', value: stripHtml(extracted.experience) },
+                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes) },
+                  { icon: 'fa-graduation-cap', label: 'Formation / Diplôme', value: stripHtml(diplome) },
+                  { icon: 'fa-map-marker-alt', label: 'Localisation', value: stripHtml(job.localisation || job.ville) }
+                ]}
+              />
 
               {(bl.texte_complet || bl.description) && (
-                <div style={{ marginTop: '32px' }}>
+                <div className="card" style={{ padding: '30px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
@@ -269,7 +214,6 @@ export default function JobDetailPage() {
                   />
                 </div>
               )}
-            </div>
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">
