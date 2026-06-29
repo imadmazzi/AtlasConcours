@@ -30,6 +30,8 @@ function extractJobData(html) {
   };
 }
 
+const stripHtml = (html) => html ? String(html).replace(/<[^>]*>?/gm, '').trim() : '';
+
 export default function JobDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();

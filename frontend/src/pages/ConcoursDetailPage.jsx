@@ -38,6 +38,8 @@ function extractMeta(html) {
   };
 }
 
+const stripHtml = (html) => html ? String(html).replace(/<[^>]*>?/gm, '').trim() : '';
+
 export default function ConcoursDetailPage() {
   const { id } = useParams();
   const [concours, setConcours] = useState(null);
