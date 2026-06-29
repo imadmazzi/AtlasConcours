@@ -210,7 +210,7 @@ export default function JobDetailPage() {
                     <div className="modern-info-icon"><i className="fa fa-money-bill-wave"></i></div>
                     <div className="modern-info-text">
                       <span className="modern-info-label">Salaire</span>
-                      <span className="modern-info-value">{stripHtml(extracted.salaire)}</span>
+                      <span className="modern-info-value value-badge">{stripHtml(extracted.salaire)}</span>
                     </div>
                   </div>
                 )}
@@ -261,6 +261,13 @@ export default function JobDetailPage() {
                 <div 
                   className="raw-annonce-content"
                   dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                  ref={(el) => {
+                    if (el) {
+                      el.querySelectorAll('img').forEach(img => {
+                        img.onerror = () => { img.style.display = 'none'; };
+                      });
+                    }
+                  }}
                 />
               </div>
             )}

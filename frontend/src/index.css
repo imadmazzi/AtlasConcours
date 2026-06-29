@@ -2068,38 +2068,37 @@ footer {
 
 /* ── Modern Info List ── */
 .modern-info-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 12px;
 }
 .modern-info-row {
   display: flex;
   align-items: center;
-  padding: 16px;
+  padding: 12px;
   background-color: #f8fafc;
-  border-radius: var(--radius);
+  border-radius: 8px;
   border: 1px solid transparent;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 .modern-info-row:hover {
   background-color: #fff;
   border-color: #e2e8f0;
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
-  transform: translateY(-2px);
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
 }
 .modern-info-icon {
-  width: 44px;
-  height: 44px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background-color: rgba(37, 99, 235, 0.1);
+  background-color: rgba(37, 99, 235, 0.08);
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  margin-right: 16px;
+  font-size: 14px;
+  margin-right: 12px;
   flex-shrink: 0;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
 }
 .modern-info-row:hover .modern-info-icon {
   background-color: var(--primary);
@@ -2111,12 +2110,14 @@ footer {
   flex: 1;
 }
 .modern-info-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
-  margin-bottom: 4px;
+  margin-bottom: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .modern-info-value {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text);
 }
@@ -2133,45 +2134,95 @@ footer {
   color: var(--danger);
 }
 
-/* ── Raw Annonce Content ── */
+/* Important Values Badge */
+.value-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: var(--primary-light, #e0e7ff);
+  color: var(--primary-dark, #3730a3);
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* ── Raw Annonce Content (Article Style) ── */
 .raw-annonce-content {
-  font-size: 15px;
-  line-height: 1.8;
-  color: var(--text);
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+  color: #334155;
   word-wrap: break-word;
 }
 .raw-annonce-content p {
-  margin-bottom: 1em;
+  margin-bottom: 1.2em;
+  text-align: justify;
 }
+.raw-annonce-content h1, 
+.raw-annonce-content h2, 
+.raw-annonce-content h3 {
+  color: #0f172a;
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 700;
+}
+.raw-annonce-content h1 { font-size: 1.5em; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+.raw-annonce-content h2 { font-size: 1.25em; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+.raw-annonce-content h3 { font-size: 1.1em; }
 .raw-annonce-content ul, .raw-annonce-content ol {
-  margin-left: 24px;
-  margin-bottom: 1em;
+  margin-left: 20px;
+  margin-bottom: 1.2em;
+  padding-left: 10px;
 }
 .raw-annonce-content li {
-  margin-bottom: 6px;
+  margin-bottom: 8px;
+  position: relative;
 }
 .raw-annonce-content a {
   color: var(--primary);
-  text-decoration: underline;
+  text-decoration: none;
+  border-bottom: 1px dotted var(--primary);
+  font-weight: 500;
 }
 .raw-annonce-content a:hover {
-  text-decoration: none;
+  border-bottom-style: solid;
 }
 .raw-annonce-content table {
   width: 100%;
   border-collapse: collapse;
-  margin: 20px 0;
+  margin: 24px 0;
   display: block;
   overflow-x: auto;
+  font-size: 14px;
+}
+.raw-annonce-content th {
+  background-color: #f1f5f9;
+  font-weight: 600;
+  color: #475569;
 }
 .raw-annonce-content th, .raw-annonce-content td {
-  border: 1px solid #e2e8f0;
-  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  padding: 12px;
   text-align: left;
 }
 .raw-annonce-content img {
   max-width: 100%;
   height: auto;
-  border-radius: var(--radius);
-  margin: 16px 0;
+  border-radius: 8px;
+  margin: 24px auto;
+  display: block;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.raw-annonce-content blockquote {
+  border-left: 4px solid var(--primary);
+  padding: 10px 20px;
+  margin: 1.5em 0;
+  background-color: #f8fafc;
+  font-style: italic;
+  color: #475569;
+}
+.raw-annonce-content hr {
+  border: 0;
+  height: 1px;
+  background: #e2e8f0;
+  margin: 2em 0;
 }

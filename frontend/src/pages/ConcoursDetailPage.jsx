@@ -247,7 +247,7 @@ export default function ConcoursDetailPage() {
                     <div className="modern-info-icon"><i className="fa fa-users"></i></div>
                     <div className="modern-info-text">
                       <span className="modern-info-label">Postes ouverts</span>
-                      <span className="modern-info-value">{stripHtml(postes)}</span>
+                      <span className="modern-info-value value-badge">{stripHtml(postes)}</span>
                     </div>
                   </div>
                 )}
@@ -289,6 +289,13 @@ export default function ConcoursDetailPage() {
                 <div 
                   className="raw-annonce-content"
                   dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                  ref={(el) => {
+                    if (el) {
+                      el.querySelectorAll('img').forEach(img => {
+                        img.onerror = () => { img.style.display = 'none'; };
+                      });
+                    }
+                  }}
                 />
               </div>
             )}
