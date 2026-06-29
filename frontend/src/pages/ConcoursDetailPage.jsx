@@ -215,20 +215,37 @@ export default function ConcoursDetailPage() {
               </div>
             )}
             
-            {/* Description (Full HTML) */}
-            {bl.texte_complet && (
-              <div className="card concours-desc-card">
-                <h2 className="card-section-title">
-                  <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                  Description de l'annonce
-                </h2>
-                <div 
-                  className="concours-intro raw-html-content"
-                  style={{ overflowX: 'auto', width: '100%', display: 'block' }}
-                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
-                />
+            {/* Description (Formatted Table) */}
+            <div className="card concours-desc-card">
+              <h2 className="card-section-title">
+                <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Description de l'annonce
+              </h2>
+              <div className="concours-intro" style={{ overflowX: 'auto', width: '100%', display: 'block' }}>
+                <table className="clean-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40%' }}>Champ</th>
+                      <th>Valeur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {organisme && <tr><td>Administration / Organisme</td><td><strong>{organisme}</strong></td></tr>}
+                    {grade && <tr><td>Grade / Échelle</td><td><strong>{grade}</strong></td></tr>}
+                    {postes && <tr><td>Postes ouverts</td><td><strong>{postes}</strong></td></tr>}
+                    {diplome && <tr><td>Diplôme requis</td><td><strong>{diplome}</strong></td></tr>}
+                    {datePubli && <tr><td>Date de publication</td><td><strong>{datePubli}</strong></td></tr>}
+                    <tr><td>Date limite</td><td><strong>{formatDate(concours.date_limite)}</strong></td></tr>
+                  </tbody>
+                </table>
+                
+                {bl.description && (
+                  <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
+                    {bl.description}
+                  </p>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">

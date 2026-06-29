@@ -176,20 +176,38 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Description (Full HTML) */}
-            {bl.texte_complet && (
-              <div className="card concours-desc-card">
-                <h2 className="card-section-title">
-                  <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                  Description de l'annonce
-                </h2>
-                <div 
-                  className="concours-intro raw-html-content"
-                  style={{ overflowX: 'auto', width: '100%', display: 'block' }}
-                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
-                />
+            {/* Description (Formatted Table) */}
+            <div className="card concours-desc-card">
+              <h2 className="card-section-title">
+                <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Description de l'annonce
+              </h2>
+              <div className="concours-intro" style={{ overflowX: 'auto', width: '100%', display: 'block' }}>
+                <table className="clean-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '40%' }}>Champ</th>
+                      <th>Valeur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(job.entreprise || job.organisme) && <tr><td>Entreprise / Administration</td><td><strong>{job.entreprise || job.organisme}</strong></td></tr>}
+                    {extracted.contrat && <tr><td>Type de contrat</td><td><strong>{extracted.contrat}</strong></td></tr>}
+                    {extracted.salaire && <tr><td>Salaire</td><td><strong>{extracted.salaire}</strong></td></tr>}
+                    {extracted.experience && <tr><td>Expérience professionnelle</td><td><strong>{extracted.experience}</strong></td></tr>}
+                    {diplome && <tr><td>Formation / Diplôme requis</td><td><strong>{diplome}</strong></td></tr>}
+                    {(job.localisation || job.ville) && <tr><td>Localisation</td><td><strong>{job.localisation || job.ville}</strong></td></tr>}
+                    <tr><td>Date limite</td><td><strong>{formatDate(job.date_limite || job.deadline)}</strong></td></tr>
+                  </tbody>
+                </table>
+                
+                {bl.description && (
+                  <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
+                    {bl.description}
+                  </p>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">
