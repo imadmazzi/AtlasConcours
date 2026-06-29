@@ -30,11 +30,13 @@ function extractMeta(html) {
   };
 
   return {
-    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i),
+    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i) || grab(/(\d{1,4})\s+postes?/i),
     grade:      grab(/(?:Grade|Échelle|Echelon|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
     ministere:  grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
     diplome:    grab(/(?:Dipl[oô]me|Formation|Niveau\s+requis)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
     datePubli:  grab(/(?:Date\s+de\s+publication|Publié\s+le|Publication)[\s:–\-]*([0-9\/\-][\w \/\-éûùàâ]{4,30})/i),
+    typeRecrutement: grab(/(?:Type\s+de\s+recrutement|Type\s+de\s+concours|Recrutement)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    specialite: grab(/(?:Spécialité|Option|Filière|Domaine)[\s:–\-]*([^|<\n]{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i)
   };
 }
 
@@ -47,7 +49,6 @@ export default function ConcoursDetailPage() {
   const [error, setError] = useState(false);
   const { i18n } = useTranslation();
 
-  // Hook must be called unconditionally (Rules of Hooks)
   const bl = useBilingual(concours);
 
   useEffect(() => {
@@ -92,14 +93,16 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
-  let meta = {}, organisme, postes, grade, diplome, datePubli;
+  let meta = {}, organisme, postes, grade, diplome, datePubli, typeRecrutement, specialite;
   try {
-    meta = extractMeta(bl.texte_complet) || {};
+    meta = extractMeta(bl.texte_complet || bl.description) || {};
     organisme = concours.organisme || meta.ministere;
     postes    = concours.postes || meta.postes;
     grade     = meta.grade;
     diplome   = bl.diplome || meta.diplome;
     datePubli = meta.datePubli;
+    typeRecrutement = meta.typeRecrutement;
+    specialite = meta.specialite;
   } catch (e) {
     console.error('ConcoursDetailPage data extraction error:', e);
     organisme = concours.organisme || '';
@@ -107,16 +110,16 @@ export default function ConcoursDetailPage() {
     grade = '';
     diplome = '';
     datePubli = '';
+    typeRecrutement = '';
+    specialite = '';
   }
 
   return (
     <main className="page-job-detail">
 
-      {/* ── HERO HEADER ─────────────────────────────────────────────── */}
       <div className="page-header concours-hero">
         <div className="container">
 
-          {/* Breadcrumb */}
           <nav className="breadcrumb" aria-label="Fil d'Ariane" style={{ marginBottom: '28px' }}>
             <Link to="/">Accueil</Link>
             <span className="sep">›</span>
@@ -125,7 +128,6 @@ export default function ConcoursDetailPage() {
             <span className="current">Détails du concours</span>
           </nav>
 
-          {/* Type badges row */}
           <div className="concours-badges" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
             <span className="chip chip-glass">
               <i className="fa fa-hashtag"></i>
@@ -137,10 +139,8 @@ export default function ConcoursDetailPage() {
             </span>
           </div>
 
-          {/* Title */}
           <h1 className="concours-hero-title">{stripHtml(bl.titre)}</h1>
 
-          {/* Meta chips grid */}
           <div className="concours-meta-grid">
             {organisme && (
               <div className="meta-chip">
@@ -151,73 +151,42 @@ export default function ConcoursDetailPage() {
                 </div>
               </div>
             )}
+            {grade && (
+              <div className="meta-chip">
+                <span className="meta-chip-icon"><i className="fa fa-layer-group"></i></span>
+                <div>
+                  <span className="meta-chip-label">Grade / Échelle</span>
+                  <span className="meta-chip-value">{stripHtml(grade)}</span>
+                </div>
+              </div>
+            )}
             {postes && (
               <div className="meta-chip">
                 <span className="meta-chip-icon"><i className="fa fa-users"></i></span>
                 <div>
                   <span className="meta-chip-label">Postes ouverts</span>
-                  <span className="meta-chip-value" style={{ color: 'var(--accent)', fontWeight: 800, fontSize: '20px' }}>{stripHtml(postes)}</span>
+                  <span className="meta-chip-value value-badge">{stripHtml(postes)}</span>
                 </div>
               </div>
             )}
-            {datePubli && (
+            {diplome && (
               <div className="meta-chip">
-                <span className="meta-chip-icon"><i className="fa fa-calendar-plus"></i></span>
+                <span className="meta-chip-icon"><i className="fa fa-graduation-cap"></i></span>
                 <div>
-                  <span className="meta-chip-label">Date de publication</span>
-                  <span className="meta-chip-value">{stripHtml(datePubli)}</span>
+                  <span className="meta-chip-label">Diplôme requis</span>
+                  <span className="meta-chip-value">{stripHtml(diplome)}</span>
                 </div>
               </div>
             )}
-            <div className="meta-chip meta-chip-urgent">
-              <span className="meta-chip-icon"><i className="fa fa-clock"></i></span>
-              <div>
-                <span className="meta-chip-label">Date limite</span>
-                <span className="meta-chip-value">{formatDate(concours.date_limite)}</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* ── BODY LAYOUT ─────────────────────────────────────────────── */}
       <div className="container" style={{ padding: '40px 24px 80px' }}>
         <div className="detail-layout">
 
-          {/* MAIN CONTENT */}
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '28px', padding: 0, border: 'none', background: 'transparent' }}>
 
-            {/* Quick Facts card — only if we have extracted data */}
-            {(postes || grade || diplome) && (
-              <div className="card concours-facts-card">
-                <h2 className="card-section-title">
-                  <i className="fa fa-info-circle" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                  Résumé du concours
-                </h2>
-                <div className="facts-grid">
-                  {postes && (
-                    <div className="fact-item">
-                      <span className="fact-label">Postes ouverts</span>
-                      <span className="fact-value highlight">{stripHtml(postes)}</span>
-                    </div>
-                  )}
-                  {grade && (
-                    <div className="fact-item">
-                      <span className="fact-label">Grade / Échelle</span>
-                      <span className="fact-value">{stripHtml(grade)}</span>
-                    </div>
-                  )}
-                  {diplome && (
-                    <div className="fact-item">
-                      <span className="fact-label">Diplôme requis</span>
-                      <span className="fact-value">{stripHtml(diplome)}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-            
-            {/* Description (Photo Matched Layout) */}
             <div className="card concours-desc-card">
               <h2 className="card-section-title" style={{ marginBottom: '20px' }}>
                 <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
@@ -243,9 +212,21 @@ export default function ConcoursDetailPage() {
                         <td>{stripHtml(grade)}</td>
                       </tr>
                     )}
+                    {typeRecrutement && (
+                      <tr>
+                        <td><i className="fa fa-bullseye photo-table-icon"></i>Type de concours</td>
+                        <td>{stripHtml(typeRecrutement)}</td>
+                      </tr>
+                    )}
+                    {specialite && (
+                      <tr>
+                        <td><i className="fa fa-book photo-table-icon"></i>Spécialité</td>
+                        <td>{stripHtml(specialite)}</td>
+                      </tr>
+                    )}
                     {diplome && (
                       <tr>
-                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Spécialité / Diplôme</td>
+                        <td><i className="fa fa-graduation-cap photo-table-icon"></i>Diplôme</td>
                         <td>{stripHtml(diplome)}</td>
                       </tr>
                     )}
@@ -265,12 +246,12 @@ export default function ConcoursDetailPage() {
                 </table>
               </div>
 
-              {bl.texte_complet && (
+              {(bl.texte_complet || bl.description) && (
                 <div style={{ marginTop: '32px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
-                    dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                    dangerouslySetInnerHTML={{ __html: bl.texte_complet || bl.description }}
                     ref={(el) => {
                       if (el) {
                         el.querySelectorAll('img').forEach(img => {
@@ -283,7 +264,6 @@ export default function ConcoursDetailPage() {
               )}
             </div>
 
-            {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">
               <h2 className="card-section-title">
                 <i className="fa fa-info-circle" style={{ color: 'var(--primary)', marginRight: 10 }}></i>

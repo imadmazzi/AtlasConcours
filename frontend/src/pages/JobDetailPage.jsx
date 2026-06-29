@@ -26,7 +26,10 @@ function extractJobData(html) {
     contrat: extractMatch(/(?:Type de contrat|Contrat)\s*[:\-]?\s*([^\n\.<]{2,50})/i),
     salaire: extractMatch(/(?:Salaire|Rémunération)\s*[:\-]?\s*([^\n\.<]{2,50})/i),
     experience: extractMatch(/(?:Expérience(?: professionnelle)?)\s*[:\-]?\s*([^\n\.<]{2,50})/i),
-    formation: extractMatch(/(?:Formation|Diplôme)\s*[:\-]?\s*([^\n\.<]{2,100})/i),
+    formation: extractMatch(/(?:Formation|Diplôme|Niveau d'études)\s*[:\-]?\s*([^\n\.<]{2,100})/i),
+    postes: extractMatch(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)\s*[:\-]?\s*(\d{1,4})/i),
+    typeRecrutement: extractMatch(/(?:Type\s+de\s+recrutement|Type\s+de\s+concours|Recrutement)\s*[:\-]?\s*([^\n\.<]{2,50})/i),
+    specialite: extractMatch(/(?:Spécialité|Option|Filière|Domaine)\s*[:\-]?\s*([^\n\.<]{2,50})/i)
   };
 }
 
@@ -82,7 +85,7 @@ export default function JobDetailPage() {
 
   let extracted = {}, diplome, postes;
   try {
-    extracted = extractJobData(bl.texte_complet) || {};
+    extracted = extractJobData(bl.texte_complet || bl.description) || {};
     diplome = bl.diplome || extracted.formation;
     postes  = job.postes || extracted.postes;
   } catch (e) {
@@ -91,8 +94,6 @@ export default function JobDetailPage() {
     diplome = '';
     postes = '';
   }
-
-  const stripHtml = (html) => html ? String(html).replace(/<[^>]*>?/gm, '').trim() : '';
 
   return (
     <main className="page-job-detail">
@@ -200,6 +201,18 @@ export default function JobDetailPage() {
                         <td>{stripHtml(job.entreprise || job.organisme)}</td>
                       </tr>
                     )}
+                    {extracted.typeRecrutement && (
+                      <tr>
+                        <td><i className="fa fa-bullseye photo-table-icon"></i>Type de concours</td>
+                        <td>{stripHtml(extracted.typeRecrutement)}</td>
+                      </tr>
+                    )}
+                    {extracted.specialite && (
+                      <tr>
+                        <td><i className="fa fa-book photo-table-icon"></i>Spécialité</td>
+                        <td>{stripHtml(extracted.specialite)}</td>
+                      </tr>
+                    )}
                     {extracted.contrat && (
                       <tr>
                         <td><i className="fa fa-file-contract photo-table-icon"></i>Type de contrat</td>
@@ -218,6 +231,12 @@ export default function JobDetailPage() {
                         <td>{stripHtml(extracted.experience)}</td>
                       </tr>
                     )}
+                    {postes && (
+                      <tr>
+                        <td><i className="fa fa-users photo-table-icon"></i>Nombre de postes</td>
+                        <td>{stripHtml(postes)}</td>
+                      </tr>
+                    )}
                     {diplome && (
                       <tr>
                         <td><i className="fa fa-graduation-cap photo-table-icon"></i>Formation / Diplôme</td>
@@ -234,12 +253,12 @@ export default function JobDetailPage() {
                 </table>
               </div>
 
-              {bl.texte_complet && (
+              {(bl.texte_complet || bl.description) && (
                 <div style={{ marginTop: '32px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
-                    dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                    dangerouslySetInnerHTML={{ __html: bl.texte_complet || bl.description }}
                     ref={(el) => {
                       if (el) {
                         el.querySelectorAll('img').forEach(img => {
