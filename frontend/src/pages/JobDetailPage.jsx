@@ -176,16 +176,18 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Description (AI only) */}
-            {bl.description && (
+            {/* Description (Full HTML) */}
+            {bl.texte_complet && (
               <div className="card concours-desc-card">
                 <h2 className="card-section-title">
                   <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
                   Description de l'annonce
                 </h2>
-                <div className="concours-intro">
-                  <p style={{ fontSize: '16px', lineHeight: '1.8', margin: 0, fontWeight: 500 }}>{bl.description}</p>
-                </div>
+                <div 
+                  className="concours-intro raw-html-content"
+                  style={{ overflowX: 'auto', width: '100%', display: 'block' }}
+                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                />
               </div>
             )}
 

@@ -2042,35 +2042,26 @@ footer {
   padding: 8px !important;
 }
 
-.clean-html-content table {
-  /* Fallback: Make table behave like a block with horizontal scroll */
+.raw-html-content table {
+  /* Ensure table scrolls horizontally without breaking layout */
   display: block;
   width: 100% !important;
+  max-width: 100%;
   overflow-x: auto;
-  margin: 16px 0;
   -webkit-overflow-scrolling: touch;
+  margin: 16px 0;
   border-collapse: collapse;
 }
 
-/* Ensure images or embedded elements do not overflow */
-.clean-html-content img,
-.clean-html-content iframe {
-  max-width: 100%;
-  height: auto;
+.raw-html-content th,
+.raw-html-content td {
+  padding: 10px;
+  border: 1px solid var(--border);
+  min-width: 100px;
 }
 
-/* ── Aggressive Cleanup for Scraped HTML ── */
-/* Hide known bad wrapper classes and elements from emploi-public.ma */
-.clean-html-content .field-name-field-banniere,
-.clean-html-content .field-type-image,
-.clean-html-content .print_html,
-.clean-html-content .print_mail,
-.clean-html-content .links,
-.clean-html-content .social-links,
-.clean-html-content h1,
-.clean-html-content h2.node-title,
-.clean-html-content img[alt*="banniere"],
-.clean-html-content a[href*="candidature"],
-.clean-html-content a[href*="postuler"] {
-  display: none !important;
+.raw-html-content img,
+.raw-html-content iframe {
+  max-width: 100%;
+  height: auto;
 }
