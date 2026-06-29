@@ -187,9 +187,9 @@ export default function ConcoursDetailPage() {
 
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '28px', padding: 0, border: 'none', background: 'transparent' }}>
 
-            <div className="card concours-desc-card">
-              <h2 className="card-section-title" style={{ marginBottom: '20px' }}>
-                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+            <div className="card concours-desc-card" style={{ padding: '24px 28px' }}>
+              <h2 className="card-section-title" style={{ fontSize: '18px', fontWeight: '700', marginBottom: '18px', color: '#111827', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <i className="fa fa-bars" style={{ color: '#6b7280', fontSize: '16px' }}></i>
                 Description de l'annonce
               </h2>
               

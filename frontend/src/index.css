@@ -2066,44 +2066,67 @@ footer {
   height: auto;
 }
 
-/* ── Photo Match Table ── */
+/* ── Description Table (matches reference screenshot exactly) ── */
 .photo-table-container {
-  border: 1px solid #f1f5f9;
-  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e8ecf0;
+  border-radius: 10px;
   overflow: hidden;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 .photo-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
-.photo-table tr:not(:last-child) {
-  border-bottom: 1px solid #f1f5f9;
+.photo-table tr {
+  border-bottom: 1px solid #e8ecf0;
+}
+.photo-table tr:last-child {
+  border-bottom: none;
+}
+.photo-table tr:hover {
+  background-color: #f1f5f9;
+  transition: background-color 0.15s ease;
 }
 .photo-table td {
-  padding: 14px 16px;
+  padding: 13px 18px;
   font-size: 14px;
-  color: #334155;
   vertical-align: middle;
+  line-height: 1.4;
 }
 .photo-table td:first-child {
-  width: 40%;
+  width: 42%;
+  color: #6b7280;
   font-weight: 500;
-  color: #475569;
+  white-space: nowrap;
+  padding-right: 8px;
 }
 .photo-table td:last-child {
+  color: #111827;
   font-weight: 600;
-  color: #0f172a;
+  word-break: break-word;
 }
 .photo-table-icon {
-  margin-right: 12px;
-  color: #64748b;
-  width: 16px;
+  margin-right: 10px;
+  color: #9ca3af;
+  font-size: 13px;
+  width: 14px;
   text-align: center;
   display: inline-block;
+  flex-shrink: 0;
+}
+
+/* "Date limite" row — red highlight */
+.photo-table-urgent td:first-child {
+  color: #dc2626;
 }
 .photo-table-urgent td:last-child {
-  color: #dc2626; /* red for date limite */
+  color: #dc2626;
+  font-weight: 700;
+}
+.photo-table-urgent .photo-table-icon {
+  color: #dc2626;
 }
 
 /* ── Raw Annonce Content (Article Style) ── */
