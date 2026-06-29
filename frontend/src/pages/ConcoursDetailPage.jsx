@@ -217,37 +217,81 @@ export default function ConcoursDetailPage() {
               </div>
             )}
             
-            {/* Description (Formatted Table) */}
+            {/* Description (Modern Info Card) */}
             <div className="card concours-desc-card">
               <h2 className="card-section-title">
-                <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Description de l'annonce
+                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'annonce
               </h2>
-              <div className="concours-intro" style={{ overflowX: 'auto', width: '100%', display: 'block' }}>
-                <table className="clean-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40%' }}>Champ</th>
-                      <th>Valeur</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {organisme && <tr><td>Administration / Organisme</td><td><strong>{stripHtml(organisme)}</strong></td></tr>}
-                    {grade && <tr><td>Grade / Échelle</td><td><strong>{stripHtml(grade)}</strong></td></tr>}
-                    {postes && <tr><td>Postes ouverts</td><td><strong>{stripHtml(postes)}</strong></td></tr>}
-                    {diplome && <tr><td>Diplôme requis</td><td><strong>{stripHtml(diplome)}</strong></td></tr>}
-                    {datePubli && <tr><td>Date de publication</td><td><strong>{stripHtml(datePubli)}</strong></td></tr>}
-                    <tr><td>Date limite</td><td><strong>{formatDate(concours.date_limite)}</strong></td></tr>
-                  </tbody>
-                </table>
-                
-                {bl.description && (
-                  <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
-                    {stripHtml(bl.description)}
-                  </p>
+              <div className="modern-info-list">
+                {organisme && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-landmark"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Administration / Organisme</span>
+                      <span className="modern-info-value">{stripHtml(organisme)}</span>
+                    </div>
+                  </div>
                 )}
+                {grade && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-layer-group"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Grade / Échelle</span>
+                      <span className="modern-info-value">{stripHtml(grade)}</span>
+                    </div>
+                  </div>
+                )}
+                {postes && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-users"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Postes ouverts</span>
+                      <span className="modern-info-value">{stripHtml(postes)}</span>
+                    </div>
+                  </div>
+                )}
+                {diplome && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-graduation-cap"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Diplôme requis</span>
+                      <span className="modern-info-value">{stripHtml(diplome)}</span>
+                    </div>
+                  </div>
+                )}
+                {datePubli && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-calendar-plus"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Date de publication</span>
+                      <span className="modern-info-value">{stripHtml(datePubli)}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="modern-info-row urgent">
+                  <div className="modern-info-icon"><i className="fa fa-clock"></i></div>
+                  <div className="modern-info-text">
+                    <span className="modern-info-label">Date limite</span>
+                    <span className="modern-info-value">{formatDate(concours.date_limite)}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Annonce Scraped Content */}
+            {bl.texte_complet && (
+              <div className="card" style={{ padding: '32px' }}>
+                <h2 className="card-section-title" style={{ marginBottom: '24px' }}>
+                  <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                  Annonce
+                </h2>
+                <div 
+                  className="raw-annonce-content"
+                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                />
+              </div>
+            )}
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">

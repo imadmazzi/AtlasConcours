@@ -180,38 +180,90 @@ export default function JobDetailPage() {
               </div>
             )}
 
-            {/* Description (Formatted Table) */}
+            {/* Description (Modern Info Card) */}
             <div className="card concours-desc-card">
               <h2 className="card-section-title">
-                <i className="fa fa-align-left" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Description de l'annonce
+                <i className="fa fa-list-ul" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                Détails de l'annonce
               </h2>
-              <div className="concours-intro" style={{ overflowX: 'auto', width: '100%', display: 'block' }}>
-                <table className="clean-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '40%' }}>Champ</th>
-                      <th>Valeur</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(job.entreprise || job.organisme) && <tr><td>Entreprise / Administration</td><td><strong>{stripHtml(job.entreprise || job.organisme)}</strong></td></tr>}
-                    {extracted.contrat && <tr><td>Type de contrat</td><td><strong>{stripHtml(extracted.contrat)}</strong></td></tr>}
-                    {extracted.salaire && <tr><td>Salaire</td><td><strong>{stripHtml(extracted.salaire)}</strong></td></tr>}
-                    {extracted.experience && <tr><td>Expérience professionnelle</td><td><strong>{stripHtml(extracted.experience)}</strong></td></tr>}
-                    {diplome && <tr><td>Formation / Diplôme requis</td><td><strong>{stripHtml(diplome)}</strong></td></tr>}
-                    {(job.localisation || job.ville) && <tr><td>Localisation</td><td><strong>{stripHtml(job.localisation || job.ville)}</strong></td></tr>}
-                    <tr><td>Date limite</td><td><strong>{formatDate(job.date_limite || job.deadline)}</strong></td></tr>
-                  </tbody>
-                </table>
-                
-                {bl.description && (
-                  <p style={{ marginTop: '24px', fontSize: '16px', lineHeight: '1.8', fontWeight: 500, color: 'var(--text)' }}>
-                    {stripHtml(bl.description)}
-                  </p>
+              <div className="modern-info-list">
+                {(job.entreprise || job.organisme) && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-building"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Entreprise / Administration</span>
+                      <span className="modern-info-value">{stripHtml(job.entreprise || job.organisme)}</span>
+                    </div>
+                  </div>
                 )}
+                {extracted.contrat && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-file-contract"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Type de contrat</span>
+                      <span className="modern-info-value">{stripHtml(extracted.contrat)}</span>
+                    </div>
+                  </div>
+                )}
+                {extracted.salaire && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-money-bill-wave"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Salaire</span>
+                      <span className="modern-info-value">{stripHtml(extracted.salaire)}</span>
+                    </div>
+                  </div>
+                )}
+                {extracted.experience && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-briefcase"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Expérience professionnelle</span>
+                      <span className="modern-info-value">{stripHtml(extracted.experience)}</span>
+                    </div>
+                  </div>
+                )}
+                {diplome && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-graduation-cap"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Formation / Diplôme requis</span>
+                      <span className="modern-info-value">{stripHtml(diplome)}</span>
+                    </div>
+                  </div>
+                )}
+                {(job.localisation || job.ville) && (
+                  <div className="modern-info-row">
+                    <div className="modern-info-icon"><i className="fa fa-map-marker-alt"></i></div>
+                    <div className="modern-info-text">
+                      <span className="modern-info-label">Localisation</span>
+                      <span className="modern-info-value">{stripHtml(job.localisation || job.ville)}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="modern-info-row urgent">
+                  <div className="modern-info-icon"><i className="fa fa-clock"></i></div>
+                  <div className="modern-info-text">
+                    <span className="modern-info-label">Date limite</span>
+                    <span className="modern-info-value">{formatDate(job.date_limite || job.deadline)}</span>
+                  </div>
+                </div>
               </div>
             </div>
+
+            {/* Annonce Scraped Content */}
+            {bl.texte_complet && (
+              <div className="card" style={{ padding: '32px' }}>
+                <h2 className="card-section-title" style={{ marginBottom: '24px' }}>
+                  <i className="fa fa-file-alt" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
+                  Annonce
+                </h2>
+                <div 
+                  className="raw-annonce-content"
+                  dangerouslySetInnerHTML={{ __html: bl.texte_complet }}
+                />
+              </div>
+            )}
 
             {/* Meta chips — clean icon rows replacing the old table */}
             <div className="card concours-facts-card">
