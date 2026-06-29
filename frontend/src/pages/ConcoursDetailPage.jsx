@@ -192,97 +192,17 @@ export default function ConcoursDetailPage() {
           <div className="detail-main" style={{ display: 'flex', flexDirection: 'column', gap: '28px', padding: 0, border: 'none', background: 'transparent' }}>
 
               <InfoCard 
-                title="Description de l'annonce"
+                title="Détails du concours"
                 fields={[
-                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(concours.date_limite), urgent: true },
+                  { icon: 'fa-heading', label: 'Titre', value: bl.titre },
                   { icon: 'fa-building', label: 'Organisme', value: stripHtml(organisme) },
                   { icon: 'fa-user-tie', label: 'Grade', value: stripHtml(grade) },
-                  { icon: 'fa-layer-group', label: 'Échelle', value: stripHtml(echelle) },
-                  { icon: 'fa-bullseye', label: 'Type de concours', value: stripHtml(typeRecrutement) },
+                  { icon: 'fa-bullseye', label: 'Type', value: stripHtml(typeRecrutement) },
                   { icon: 'fa-book', label: 'Spécialité', value: stripHtml(specialite) },
-                  { icon: 'fa-graduation-cap', label: 'Diplôme requis', value: stripHtml(diplome) },
                   { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes) },
-                  { icon: 'fa-clock', label: 'Date de publication', value: stripHtml(datePubli) }
+                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(concours.date_limite), urgent: true }
                 ]}
               />
-
-              {(bl.texte_complet || bl.description) && (
-                <div className="card" style={{ padding: '30px' }}>
-                  <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
-                  <div 
-                    className="raw-annonce-content"
-                    dangerouslySetInnerHTML={{ __html: bl.texte_complet || bl.description }}
-                    ref={(el) => {
-                      if (el) {
-                        el.querySelectorAll('img').forEach(img => {
-                          img.onerror = () => { img.style.display = 'none'; };
-                        });
-                      }
-                    }}
-                  />
-                </div>
-              )}
-
-            <div className="card concours-facts-card">
-              <h2 className="card-section-title">
-                <i className="fa fa-info-circle" style={{ color: 'var(--primary)', marginRight: 10 }}></i>
-                Informations clés
-              </h2>
-              <div className="concours-meta-grid">
-                {organisme && (
-                  <div className="meta-chip">
-                    <span className="meta-chip-icon"><i className="fa fa-landmark"></i></span>
-                    <div>
-                      <span className="meta-chip-label">Organisme</span>
-                      <span className="meta-chip-value">{organisme}</span>
-                    </div>
-                  </div>
-                )}
-                {postes && (
-                  <div className="meta-chip">
-                    <span className="meta-chip-icon"><i className="fa fa-users"></i></span>
-                    <div>
-                      <span className="meta-chip-label">Postes ouverts</span>
-                      <span className="meta-chip-value" style={{ color: 'var(--accent)', fontWeight: 800 }}>{postes}</span>
-                    </div>
-                  </div>
-                )}
-                {grade && (
-                  <div className="meta-chip">
-                    <span className="meta-chip-icon"><i className="fa fa-layer-group"></i></span>
-                    <div>
-                      <span className="meta-chip-label">Grade / Échelle</span>
-                      <span className="meta-chip-value">{grade}</span>
-                    </div>
-                  </div>
-                )}
-                {diplome && (
-                  <div className="meta-chip">
-                    <span className="meta-chip-icon"><i className="fa fa-graduation-cap"></i></span>
-                    <div>
-                      <span className="meta-chip-label">Diplôme requis</span>
-                      <span className="meta-chip-value">{diplome}</span>
-                    </div>
-                  </div>
-                )}
-                {datePubli && (
-                  <div className="meta-chip">
-                    <span className="meta-chip-icon"><i className="fa fa-calendar-plus"></i></span>
-                    <div>
-                      <span className="meta-chip-label">Date de publication</span>
-                      <span className="meta-chip-value">{datePubli}</span>
-                    </div>
-                  </div>
-                )}
-                <div className="meta-chip meta-chip-urgent">
-                  <span className="meta-chip-icon"><i className="fa fa-clock"></i></span>
-                  <div>
-                    <span className="meta-chip-label">Date limite</span>
-                    <span className="meta-chip-value">{formatDate(concours.date_limite)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
 
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
