@@ -76,7 +76,14 @@ function formatDate(dateStr) {
  */
 function extractMetaFromHtml(html) {
   if (!html) return {};
-  const text = html.replace(/<[^>]*>/gm, ' ').replace(/\s+/g, ' ');
+  
+  // Preserve line breaks for regex matching before removing tags (matches frontend fix)
+  let text = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|li|tr|h\d)>/gi, '\n')
+    .replace(/<[^>]*>/gm, ' ')
+    .replace(/[ \t]+/g, ' ') // Collapse spaces/tabs only
+    .replace(/\n\s*\n/g, '\n'); // Collapse multiple newlines
 
   const grab = (re) => {
     const m = text.match(re);
@@ -84,10 +91,10 @@ function extractMetaFromHtml(html) {
   };
 
   return {
-    organisme:  grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i),
-    grade:      grab(/(?:Grade|Échelle|Echelon|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,}))/i),
-    entreprise: grab(/(?:Entreprise|Société|Employeur)[\s:–\-]*([^|<\n]{3,80}?)(?:\s*[\n|]|(?=\s{2,}))/i),
+    organisme:  grab(/(?:Minist[eè]re|Organisme|Administration|Établissement)[\s:–\-]*([^|<\n]{4,80}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    postes:     grab(/(?:Nombre\s+de\s+postes?|Postes?\s+ouverts?)[\s:–\-]*(\d{1,4})/i) || grab(/(\d{1,4})\s+postes?/i),
+    grade:      grab(/(?:Grade|Échelle|Echelon|Corps)[\s:–\-]*([A-Za-zÀ-ÿ0-9 \-éèêëàâùûü']{3,60}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
+    entreprise: grab(/(?:Entreprise|Société|Employeur)[\s:–\-]*([^|<\n]{3,80}?)(?:\s*[\n|]|(?=\s{2,})|$)/i),
     contrat:    grab(/(?:Type de contrat|Contrat)[\s:–\-]*([^\n.<]{2,50})/i),
   };
 }
@@ -112,18 +119,27 @@ function isAnapecCode(value) {
 async function validateLiveRecord(type, identifier) {
   const apiUrl = `${API_BASE}/${type}/${identifier}`;
   console.log(`🔍 [Telegram] Validating live URL: ${apiUrl}`);
-  try {
-    const res = await axios.get(apiUrl, { timeout: 8000, validateStatus: () => true });
-    if (res.status === 200 && res.data && res.data.id) {
-      console.log(`  ✅ Record confirmed live (id: ${res.data.id}, slug: ${res.data.slug || 'N/A'})`);
-      return { ok: true, liveRecord: res.data };
+  
+  // Retry up to 3 times to account for Vercel edge caching/delays
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const res = await axios.get(apiUrl, { timeout: 8000, validateStatus: () => true });
+      if (res.status === 200 && res.data && res.data.id) {
+        console.log(`  ✅ Record confirmed live (id: ${res.data.id}, slug: ${res.data.slug || 'N/A'})`);
+        return { ok: true, liveRecord: res.data };
+      }
+      console.warn(`  ⚠️  Attempt ${attempt}/3: Live API returned HTTP ${res.status} for "${identifier}".`);
+    } catch (err) {
+      console.warn(`  ⚠️  Attempt ${attempt}/3: Could not reach live API: ${err.message}.`);
     }
-    console.warn(`  ⚠️  Live API returned HTTP ${res.status} for identifier "${identifier}" — skipping broadcast.`);
-    return { ok: false, liveRecord: null };
-  } catch (err) {
-    console.warn(`  ⚠️  Could not reach live API: ${err.message} — skipping broadcast.`);
-    return { ok: false, liveRecord: null };
+    if (attempt < 3) {
+      console.log(`  ⏳ Waiting 5 seconds before next attempt...`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
+    }
   }
+
+  console.warn(`  ❌ Live validation failed after 3 attempts — skipping broadcast.`);
+  return { ok: false, liveRecord: null };
 }
 
 function getItemTitle(item) {
