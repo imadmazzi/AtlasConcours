@@ -395,4 +395,88 @@ async function broadcastEmploi(emploi) {
   await new Promise(resolve => setTimeout(resolve, 3000));
 }
 
-module.exports = { broadcastConcours, broadcastEmploi, assertStrictTelegramMatch };
+/**
+ * Broadcast a newly-inserted concours DIRECTLY from the local record.
+ * Skips live-API validation — safe to call immediately after INSERT,
+ * before Vercel has had time to propagate the new row.
+ */
+async function broadcastDirectConcours(concours) {
+  if (!isConfigured()) {
+    console.warn('⚠️  [Telegram] BOT_TOKEN not configured — skipping direct broadcast.');
+    return;
+  }
+  try {
+    const titre     = escapeHtml(concours.titre || 'Nouveau Concours');
+    const meta      = extractMetaFromHtml(concours.texte_complet || concours.description);
+    const organisme = escapeHtml(concours.organisme || meta.organisme || '');
+    const deadline  = escapeHtml(formatDate(concours.date_limite));
+    const identifier = concours.slug || concours.id;
+    const link      = `${SITE_URL}/concours/${identifier}`;
+
+    const lines = [
+      `🎓 <b>Nouveau Concours Public</b>`,
+      ``,
+      `📢 <b>${titre}</b>`,
+      ``,
+    ];
+    if (organisme) lines.push(`🏛 <b>Organisme :</b> ${organisme}`);
+    if (meta.postes) lines.push(`👥 <b>Postes :</b> ${escapeHtml(meta.postes)}`);
+    lines.push(
+      `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
+      ``,
+      `🔗 <a href="${link}">Voir les détails et postuler ici</a>`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
+      `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
+    );
+
+    console.log(`[TELEGRAM DIRECT] Sending concours: "${concours.titre}" → ${link}`);
+    await sendToChannel(lines.join('\n'));
+  } catch (err) {
+    console.error('❌ [Telegram] broadcastDirectConcours error:', err.message);
+  }
+}
+
+/**
+ * Broadcast a newly-inserted emploi DIRECTLY from the local record.
+ * Skips live-API validation — safe to call immediately after INSERT.
+ */
+async function broadcastDirectEmploi(emploi) {
+  if (!isConfigured()) {
+    console.warn('⚠️  [Telegram] BOT_TOKEN not configured — skipping direct broadcast.');
+    return;
+  }
+  try {
+    const titre        = escapeHtml(emploi.titre || "Nouvelle Offre d'Emploi");
+    const meta         = extractMetaFromHtml(emploi.texte_complet || emploi.description);
+    const isAnapec     = isAnapecCode(emploi.entreprise || '');
+    const entreprise   = escapeHtml(isAnapec ? (meta.entreprise || 'Secteur Public / Privé') : (emploi.entreprise || meta.entreprise || 'Administration'));
+    const localisation = escapeHtml(emploi.localisation || emploi.ville || 'Maroc');
+    const deadline     = escapeHtml(formatDate(emploi.date_limite || emploi.deadline));
+    const link         = `${SITE_URL}/jobs/${emploi.id}`;
+
+    const text = [
+      `💼 <b>Nouvelle Offre d'Emploi</b>`,
+      ``,
+      `📢 <b>${titre}</b>`,
+      ``,
+      `🏢 <b>Entreprise :</b> ${entreprise}`,
+      `📍 <b>Localisation :</b> ${localisation}`,
+      `📅 <b>Date Limite :</b> <b>${deadline}</b>`,
+      ``,
+      `🔗 <a href="${link}">Voir l'offre complète et postuler</a>`,
+      ``,
+      `━━━━━━━━━━━━━━━━━━━━`,
+      `📌 Restez informés sur <a href="${SITE_URL}">AtlasConcours.ma</a>`,
+      `🔔 Abonnez-vous à notre canal pour ne rien manquer !`,
+    ].join('\n');
+
+    console.log(`[TELEGRAM DIRECT] Sending emploi: "${emploi.titre}" → ${link}`);
+    await sendToChannel(text);
+  } catch (err) {
+    console.error('❌ [Telegram] broadcastDirectEmploi error:', err.message);
+  }
+}
+
+module.exports = { broadcastConcours, broadcastEmploi, broadcastDirectConcours, broadcastDirectEmploi, assertStrictTelegramMatch };

@@ -4,7 +4,7 @@ const cheerio = require('cheerio');
 const db = require('./db');
 const slugify = require('slugify');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
-const { broadcastConcours, broadcastEmploi } = require('./services/telegramService');
+const { broadcastDirectConcours, broadcastDirectEmploi } = require('./services/telegramService');
 const { isExpired, parseDateLimite } = require('./utils/dateParser');
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
@@ -509,8 +509,9 @@ function insertItemNow(item, type) {
       if (newId) {
         const newRecord = db.data.concours.find(c => c.id == newId);
         if (newRecord) {
-          broadcastConcours(newRecord).catch(err =>
-            console.error('❌ [Telegram] broadcastConcours error (ignored):', err.message)
+          // Use broadcastDirect: no live-API validation needed since we just inserted the record.
+          broadcastDirectConcours(newRecord).catch(err =>
+            console.error('❌ [Telegram] broadcastDirectConcours error (ignored):', err.message)
           );
         }
       }
@@ -526,8 +527,9 @@ function insertItemNow(item, type) {
       if (newId) {
         const newRecord = db.data.emplois.find(e => e.id == newId);
         if (newRecord) {
-          broadcastEmploi(newRecord).catch(err =>
-            console.error('❌ [Telegram] broadcastEmploi error (ignored):', err.message)
+          // Use broadcastDirect: no live-API validation needed since we just inserted the record.
+          broadcastDirectEmploi(newRecord).catch(err =>
+            console.error('❌ [Telegram] broadcastDirectEmploi error (ignored):', err.message)
           );
         }
       }
