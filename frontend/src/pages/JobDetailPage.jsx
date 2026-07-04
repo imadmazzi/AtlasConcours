@@ -49,8 +49,8 @@ export default function JobDetailPage() {
   const [error, setError] = useState(false);
   const { i18n } = useTranslation();
 
-  // Hook must be called unconditionally (Rules of Hooks)
-  const bl = useBilingual(job);
+  // Always call hooks unconditionally; bl will be safe empty object when job is null
+  const bl = useBilingual(job) || {};
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -89,6 +89,9 @@ export default function JobDetailPage() {
     </div>
   );
 
+  // Safety: if data loaded but bl hook hasn't resolved yet, render nothing
+  if (!bl) return <div className="loading" style={{ paddingTop: 80 }}><div className="loading-spinner"></div></div>;
+
   let extracted = {}, diplome, postes;
   try {
     extracted = extractJobData(bl.texte_complet || bl.description) || {};
@@ -116,12 +119,12 @@ export default function JobDetailPage() {
 
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
             <span className="badge badge-general" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
-              Réf: {job.id || 'N/A'}
+              Réf: {job?.id || 'N/A'}
             </span>
             <span className="badge badge-administration" style={{ background: 'var(--accent)', color: 'white' }}>
-              {stripHtml(job.organisme || job.categorie || 'Secteur Public / Privé')}
+              {stripHtml(job?.organisme || job?.categorie || 'Secteur Public / Privé')}
             </span>
-            {extracted.contrat && (
+            {extracted?.contrat && (
               <span className="badge badge-securite" style={{ background: 'rgba(255,255,255,0.15)', color: 'white' }}>
                 <i className="fa fa-file-contract" style={{ marginRight: '6px' }}></i>
                 {stripHtml(extracted.contrat)}
@@ -129,24 +132,24 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl.titre)}</h1>
+          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl?.titre || job?.titre || '')}</h1>
           
           <div className="page-header-meta" style={{ gap: '24px' }}>
-            {(job.entreprise || job.organisme) && (
+            {(job?.entreprise || job?.organisme) && (
               <div className="meta-item" style={{ fontSize: '16px' }}>
                 <i className="fa fa-building"></i>
-                <strong>{stripHtml(job.entreprise || job.organisme)}</strong>
+                <strong>{stripHtml(job?.entreprise || job?.organisme)}</strong>
               </div>
             )}
-            {(job.localisation || job.ville) && (
+            {(job?.localisation || job?.ville) && (
               <div className="meta-item" style={{ fontSize: '16px' }}>
                 <i className="fa fa-map-marker-alt"></i>
-                {stripHtml(job.localisation || job.ville)}
+                {stripHtml(job?.localisation || job?.ville)}
               </div>
             )}
             <div className="meta-item" style={{ fontSize: '16px', color: 'var(--accent)' }}>
               <i className="fa fa-calendar-alt"></i>
-              Postuler avant le: <strong>{formatDate(job.date_limite || job.deadline)}</strong>
+              Postuler avant le: <strong>{formatDate(job?.date_limite || job?.deadline)}</strong>
             </div>
           </div>
         </div>
@@ -190,25 +193,25 @@ export default function JobDetailPage() {
               <InfoCard 
                 title="Description de l'annonce"
                 fields={[
-                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(job.date_limite || job.deadline), urgent: true },
-                  { icon: 'fa-building', label: 'Entreprise / Organisme', value: stripHtml(job.entreprise || job.organisme) },
-                  { icon: 'fa-bullseye', label: 'Type de concours', value: stripHtml(extracted.typeRecrutement) },
-                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(extracted.specialite) },
-                  { icon: 'fa-file-contract', label: 'Type de contrat', value: stripHtml(extracted.contrat) },
-                  { icon: 'fa-money-bill-wave', label: 'Salaire', value: stripHtml(extracted.salaire) },
-                  { icon: 'fa-briefcase', label: 'Expérience professionnelle', value: stripHtml(extracted.experience) },
-                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes) },
-                  { icon: 'fa-graduation-cap', label: 'Formation / Diplôme', value: stripHtml(diplome) },
-                  { icon: 'fa-map-marker-alt', label: 'Localisation', value: stripHtml(job.localisation || job.ville) }
+                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(job?.date_limite || job?.deadline), urgent: true },
+                  { icon: 'fa-building', label: 'Entreprise / Organisme', value: stripHtml(job?.entreprise || job?.organisme || '') },
+                  { icon: 'fa-bullseye', label: 'Type de concours', value: stripHtml(extracted?.typeRecrutement || '') },
+                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(extracted?.specialite || '') },
+                  { icon: 'fa-file-contract', label: 'Type de contrat', value: stripHtml(extracted?.contrat || '') },
+                  { icon: 'fa-money-bill-wave', label: 'Salaire', value: stripHtml(extracted?.salaire || '') },
+                  { icon: 'fa-briefcase', label: 'Expérience professionnelle', value: stripHtml(extracted?.experience || '') },
+                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes || '') },
+                  { icon: 'fa-graduation-cap', label: 'Formation / Diplôme', value: stripHtml(diplome || '') },
+                  { icon: 'fa-map-marker-alt', label: 'Localisation', value: stripHtml(job?.localisation || job?.ville || '') }
                 ]}
               />
 
-              {(bl.texte_complet || bl.description) && (
+              {(bl?.texte_complet || bl?.description) && (
                 <div className="card" style={{ padding: '30px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
-                    dangerouslySetInnerHTML={{ __html: bl.texte_complet || bl.description }}
+                    dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
                     ref={(el) => {
                       if (el) {
                         el.querySelectorAll('img').forEach(img => {
@@ -227,16 +230,16 @@ export default function JobDetailPage() {
                 Informations clés
               </h2>
               <div className="concours-meta-grid">
-                {(job.entreprise || job.organisme) && (
+                {(job?.entreprise || job?.organisme) && (
                   <div className="meta-chip">
                     <span className="meta-chip-icon"><i className="fa fa-building"></i></span>
                     <div>
                       <span className="meta-chip-label">Entreprise / Administration</span>
-                      <span className="meta-chip-value">{job.entreprise || job.organisme}</span>
+                      <span className="meta-chip-value">{job?.entreprise || job?.organisme}</span>
                     </div>
                   </div>
                 )}
-                {extracted.contrat && (
+                {extracted?.contrat && (
                   <div className="meta-chip">
                     <span className="meta-chip-icon"><i className="fa fa-file-contract"></i></span>
                     <div>
@@ -245,7 +248,7 @@ export default function JobDetailPage() {
                     </div>
                   </div>
                 )}
-                {extracted.formation && (
+                {extracted?.formation && (
                   <div className="meta-chip">
                     <span className="meta-chip-icon"><i className="fa fa-graduation-cap"></i></span>
                     <div>
@@ -258,14 +261,14 @@ export default function JobDetailPage() {
                   <span className="meta-chip-icon"><i className="fa fa-map-marker-alt"></i></span>
                   <div>
                     <span className="meta-chip-label">Localisation</span>
-                    <span className="meta-chip-value">{job.localisation || job.ville || 'Maroc'}</span>
+                    <span className="meta-chip-value">{job?.localisation || job?.ville || 'Maroc'}</span>
                   </div>
                 </div>
                 <div className="meta-chip meta-chip-urgent">
                   <span className="meta-chip-icon"><i className="fa fa-clock"></i></span>
                   <div>
                     <span className="meta-chip-label">Délai de dépôt</span>
-                    <span className="meta-chip-value">{formatDate(job.date_limite || job.deadline)}</span>
+                    <span className="meta-chip-value">{formatDate(job?.date_limite || job?.deadline)}</span>
                   </div>
                 </div>
               </div>
@@ -274,11 +277,11 @@ export default function JobDetailPage() {
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
               items={buildJobFAQ({
-                titre: bl.titre,
-                lien_candidature: job.lien_candidature,
-                lien: job.lien,
-                diplome: bl.diplome
-              }, extracted)}
+                titre: bl?.titre || job?.titre || '',
+                lien_candidature: job?.lien_candidature,
+                lien: job?.lien,
+                diplome: bl?.diplome
+              }, extracted || {})}
               title="أسئلة شائعة حول هذه الوظيفة"
             />
 
@@ -308,10 +311,10 @@ export default function JobDetailPage() {
             <div className="card cta-card-sticky">
               <h3 style={{ fontSize: '18px', marginBottom: '16px' }}>Intéressé(e) par cette offre ?</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '24px' }}>
-                Préparez votre CV et postulez directement sur le site officiel avant le <strong>{formatDate(job.date_limite || job.deadline)}</strong>.
+                Préparez votre CV et postulez directement sur le site officiel avant le <strong>{formatDate(job?.date_limite || job?.deadline)}</strong>.
               </p>
               
-              {job.lien_candidature || job.lien ? (
+              {(job?.lien_candidature || job?.lien) ? (
                 <a href={job.lien_candidature || job.lien} target="_blank" rel="noreferrer" className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '16px', fontSize: '16px', borderRadius: '12px', marginBottom: '16px' }}>
                   Voir l'offre officielle
                   <i className="fa fa-external-link-alt" style={{ marginLeft: '8px' }}></i>

@@ -57,7 +57,8 @@ export default function ConcoursDetailPage() {
   const [error, setError] = useState(false);
   const { i18n } = useTranslation();
 
-  const bl = useBilingual(concours);
+  // Always call hooks unconditionally; bl will be safe empty object when concours is null
+  const bl = useBilingual(concours) || {};
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -101,6 +102,9 @@ export default function ConcoursDetailPage() {
     </div>
   );
 
+  // Safety: if data loaded but bl hook hasn't resolved yet, render nothing
+  if (!bl) return <div className="loading" style={{ paddingTop: 80 }}><div className="loading-spinner"></div></div>;
+
   let meta = {}, organisme, postes, grade, echelle, diplome, datePubli, typeRecrutement, specialite;
   try {
     meta = extractMeta(bl.texte_complet || bl.description) || {};
@@ -141,15 +145,15 @@ export default function ConcoursDetailPage() {
           <div className="concours-badges" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
             <span className="chip chip-glass">
               <i className="fa fa-hashtag"></i>
-              Réf : {String(concours.id || '').substring(0, 8).toUpperCase() || 'N/A'}
+              Réf : {String(concours?.id || '').substring(0, 8).toUpperCase() || 'N/A'}
             </span>
             <span className="chip chip-accent">
               <i className="fa fa-graduation-cap"></i>
-              {stripHtml(concours.categorie) || 'Concours Public'}
+              {stripHtml(concours?.categorie) || 'Concours Public'}
             </span>
           </div>
 
-          <h1 className="concours-hero-title">{stripHtml(bl.titre)}</h1>
+          <h1 className="concours-hero-title">{stripHtml(bl?.titre || concours?.titre || '')}</h1>
 
           <div className="concours-meta-grid">
             {organisme && (
@@ -200,22 +204,22 @@ export default function ConcoursDetailPage() {
               <InfoCard 
                 title="Détails du concours"
                 fields={[
-                  { icon: 'fa-heading', label: 'Titre', value: bl.titre },
-                  { icon: 'fa-building', label: 'Organisme', value: stripHtml(organisme) },
-                  { icon: 'fa-user-tie', label: 'Grade', value: stripHtml(grade) },
-                  { icon: 'fa-bullseye', label: 'Type', value: stripHtml(typeRecrutement) },
-                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(specialite) },
-                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes) },
-                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(concours.date_limite), urgent: true }
+                  { icon: 'fa-heading', label: 'Titre', value: bl?.titre || concours?.titre || '' },
+                  { icon: 'fa-building', label: 'Organisme', value: stripHtml(organisme || '') },
+                  { icon: 'fa-user-tie', label: 'Grade', value: stripHtml(grade || '') },
+                  { icon: 'fa-bullseye', label: 'Type', value: stripHtml(typeRecrutement || '') },
+                  { icon: 'fa-book', label: 'Spécialité', value: stripHtml(specialite || '') },
+                  { icon: 'fa-users', label: 'Nombre de postes', value: stripHtml(postes || '') },
+                  { icon: 'fa-calendar-alt', label: 'Date limite', value: formatDate(concours?.date_limite), urgent: true }
                 ]}
               />
 
             {/* CONTEXTUAL FAQ */}
             <InlineFAQ
               items={buildConcoursFAQ({
-                titre: bl.titre,
-                lien_source: concours.lien_source,
-                diplome: bl.diplome
+                titre: bl?.titre || concours?.titre || '',
+                lien_source: concours?.lien_source,
+                diplome: bl?.diplome
               }, { postes, grade, diplome })}
               title="أسئلة شائعة حول هذه المباراة"
             />
@@ -249,10 +253,10 @@ export default function ConcoursDetailPage() {
               <h3 className="cta-title">Postulez à ce concours</h3>
               <p className="cta-subtitle">
                 Consultez le dossier officiel et déposez votre candidature avant le
-                <strong> {formatDate(concours.date_limite)}</strong>.
+                <strong> {formatDate(concours?.date_limite)}</strong>.
               </p>
 
-              {concours.lien_source ? (
+              {concours?.lien_source ? (
                 <a
                   href={concours.lien_source}
                   target="_blank"
@@ -279,7 +283,7 @@ export default function ConcoursDetailPage() {
             <div className="card" style={{ textAlign: 'center', padding: '20px' }}>
               <div style={{ fontSize: 28, marginBottom: 6 }}>📅</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Date limite</div>
-              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--danger)' }}>{formatDate(concours.date_limite)}</div>
+              <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--danger)' }}>{formatDate(concours?.date_limite)}</div>
             </div>
           </aside>
         </div>
