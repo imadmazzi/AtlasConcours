@@ -211,6 +211,7 @@ export default function JobDetailPage() {
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
                   <div 
                     className="raw-annonce-content"
+                    style={{ overflowX: 'hidden', width: '100%' }}
                     dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
                     ref={(el) => {
                       if (el) {
@@ -218,6 +219,7 @@ export default function JobDetailPage() {
                           if (child.tagName === 'IMG') {
                             child.onerror = () => { child.style.display = 'none'; };
                           }
+                          if (child.style.whiteSpace) child.style.whiteSpace = 'normal';
                           if (child.style.width) child.style.width = '100%';
                           if (child.style.minWidth) child.style.minWidth = '0';
                           if (child.getAttribute('width')) child.removeAttribute('width');

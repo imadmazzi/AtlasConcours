@@ -2331,6 +2331,9 @@ footer {
   .raw-annonce-content * {
     max-width: 100% !important;
     box-sizing: border-box !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
   }
 
   /* Tables scroll horizontally on mobile instead of overflowing */
