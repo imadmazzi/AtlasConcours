@@ -214,11 +214,21 @@ export default function JobDetailPage() {
                     dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
                     ref={(el) => {
                       if (el) {
-                        el.querySelectorAll('img').forEach(img => {
-                          img.onerror = () => { img.style.display = 'none'; };
+                        el.querySelectorAll('*').forEach(child => {
+                          if (child.tagName === 'IMG') {
+                            child.onerror = () => { child.style.display = 'none'; };
+                          }
+                          if (child.style.width) child.style.width = '100%';
+                          if (child.style.minWidth) child.style.minWidth = '0';
+                          if (child.getAttribute('width')) child.removeAttribute('width');
+                          if (child.style.height) child.style.height = 'auto';
                         });
+
                         // Wrap tables in responsive container for mobile scroll
                         el.querySelectorAll('table').forEach(table => {
+                          // Strip table specific widths
+                          table.removeAttribute('width');
+                          table.style.width = '100%';
                           if (!table.parentNode.classList.contains('table-responsive-wrapper')) {
                             const wrapper = document.createElement('div');
                             wrapper.className = 'table-responsive-wrapper';

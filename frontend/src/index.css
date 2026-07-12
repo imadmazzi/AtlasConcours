@@ -2307,6 +2307,13 @@ footer {
 
 /* ── Mobile fix: prevent texte_complet overflow on small screens ─────────── */
 @media (max-width: 768px) {
+  /* Prevent any horizontal scroll at the viewport level */
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
   /* Ensure the main page wrapper never exceeds screen width */
   .page-job-detail {
     max-width: 100vw;
