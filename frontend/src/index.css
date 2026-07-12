@@ -2328,12 +2328,32 @@ footer {
   }
 
   /* AGGRESSIVE OVERRIDE: Prevent any injected inline style (e.g. width: 900px) from overflowing */
-  .raw-annonce-content * {
+  .raw-annonce-content *,
+  .StandardTable * {
     max-width: 100% !important;
     box-sizing: border-box !important;
     white-space: normal !important;
     word-break: break-word !important;
     overflow-wrap: anywhere !important;
+  }
+
+  /* Text Truncation for mobile titles and meta items */
+  .mobile-truncate-text {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+
+  /* Mobile-only Table Wrapper */
+  .mobile-table-wrapper {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
   }
 
   /* Tables scroll horizontally on mobile instead of overflowing */

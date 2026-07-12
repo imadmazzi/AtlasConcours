@@ -132,17 +132,17 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          <h1 style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl?.titre || job?.titre || '')}</h1>
+          <h1 className="mobile-truncate-text" style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl?.titre || job?.titre || '')}</h1>
           
           <div className="page-header-meta" style={{ gap: '24px' }}>
             {(job?.entreprise || job?.organisme) && (
-              <div className="meta-item" style={{ fontSize: '16px' }}>
+              <div className="meta-item mobile-truncate-text" style={{ fontSize: '16px' }}>
                 <i className="fa fa-building"></i>
                 <strong>{stripHtml(job?.entreprise || job?.organisme)}</strong>
               </div>
             )}
             {(job?.localisation || job?.ville) && (
-              <div className="meta-item" style={{ fontSize: '16px' }}>
+              <div className="meta-item mobile-truncate-text" style={{ fontSize: '16px' }}>
                 <i className="fa fa-map-marker-alt"></i>
                 {stripHtml(job?.localisation || job?.ville)}
               </div>
@@ -209,38 +209,40 @@ export default function JobDetailPage() {
               {(bl?.texte_complet || bl?.description) && (
                 <div className="card" style={{ padding: '30px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
-                  <div 
-                    className="raw-annonce-content"
-                    style={{ overflowX: 'hidden', width: '100%' }}
-                    dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
-                    ref={(el) => {
-                      if (el) {
-                        el.querySelectorAll('*').forEach(child => {
-                          if (child.tagName === 'IMG') {
-                            child.onerror = () => { child.style.display = 'none'; };
-                          }
-                          if (child.style.whiteSpace) child.style.whiteSpace = 'normal';
-                          if (child.style.width) child.style.width = '100%';
-                          if (child.style.minWidth) child.style.minWidth = '0';
-                          if (child.getAttribute('width')) child.removeAttribute('width');
-                          if (child.style.height) child.style.height = 'auto';
-                        });
+                  <div className="mobile-table-wrapper">
+                    <div 
+                      className="raw-annonce-content StandardTable"
+                      style={{ overflowX: 'hidden', width: '100%' }}
+                      dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
+                      ref={(el) => {
+                        if (el) {
+                          el.querySelectorAll('*').forEach(child => {
+                            if (child.tagName === 'IMG') {
+                              child.onerror = () => { child.style.display = 'none'; };
+                            }
+                            if (child.style.whiteSpace) child.style.whiteSpace = 'normal';
+                            if (child.style.width) child.style.width = '100%';
+                            if (child.style.minWidth) child.style.minWidth = '0';
+                            if (child.getAttribute('width')) child.removeAttribute('width');
+                            if (child.style.height) child.style.height = 'auto';
+                          });
 
-                        // Wrap tables in responsive container for mobile scroll
-                        el.querySelectorAll('table').forEach(table => {
-                          // Strip table specific widths
-                          table.removeAttribute('width');
-                          table.style.width = '100%';
-                          if (!table.parentNode.classList.contains('table-responsive-wrapper')) {
-                            const wrapper = document.createElement('div');
-                            wrapper.className = 'table-responsive-wrapper';
-                            table.parentNode.insertBefore(wrapper, table);
-                            wrapper.appendChild(table);
-                          }
-                        });
-                      }
-                    }}
-                  />
+                          // Wrap tables in responsive container for mobile scroll
+                          el.querySelectorAll('table').forEach(table => {
+                            // Strip table specific widths
+                            table.removeAttribute('width');
+                            table.style.width = '100%';
+                            if (!table.parentNode.classList.contains('table-responsive-wrapper')) {
+                              const wrapper = document.createElement('div');
+                              wrapper.className = 'table-responsive-wrapper';
+                              table.parentNode.insertBefore(wrapper, table);
+                              wrapper.appendChild(table);
+                            }
+                          });
+                        }
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
