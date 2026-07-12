@@ -2307,13 +2307,6 @@ footer {
 
 /* ── Mobile fix: prevent texte_complet overflow on small screens ─────────── */
 @media (max-width: 768px) {
-  /* Prevent any horizontal scroll at the viewport level */
-  html, body {
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100vw;
-  }
-
   /* Ensure the main page wrapper never exceeds screen width */
   .page-job-detail {
     max-width: 100vw;
@@ -2329,7 +2322,7 @@ footer {
 
   /* AGGRESSIVE OVERRIDE: Prevent any injected inline style (e.g. width: 900px) from overflowing */
   .raw-annonce-content *,
-  .StandardTable * {
+  .job-detail-standard-table * {
     max-width: 100% !important;
     box-sizing: border-box !important;
     white-space: normal !important;
@@ -2338,7 +2331,7 @@ footer {
   }
 
   /* Text Truncation for mobile titles and meta items */
-  .mobile-truncate-text {
+  .job-detail-truncate-text {
     display: -webkit-box !important;
     -webkit-line-clamp: 2 !important;
     -webkit-box-orient: vertical !important;
@@ -2349,7 +2342,7 @@ footer {
   }
 
   /* Mobile-only Table Wrapper */
-  .mobile-table-wrapper {
+  .job-detail-table-wrapper {
     display: block !important;
     width: 100% !important;
     overflow-x: auto !important;

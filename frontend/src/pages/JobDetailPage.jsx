@@ -132,17 +132,17 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          <h1 className="mobile-truncate-text" style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl?.titre || job?.titre || '')}</h1>
+          <h1 className="job-detail-truncate-text" style={{ fontSize: '36px', marginBottom: '24px', lineHeight: '1.2' }}>{stripHtml(bl?.titre || job?.titre || '')}</h1>
           
           <div className="page-header-meta" style={{ gap: '24px' }}>
             {(job?.entreprise || job?.organisme) && (
-              <div className="meta-item mobile-truncate-text" style={{ fontSize: '16px' }}>
+              <div className="meta-item job-detail-truncate-text" style={{ fontSize: '16px' }}>
                 <i className="fa fa-building"></i>
                 <strong>{stripHtml(job?.entreprise || job?.organisme)}</strong>
               </div>
             )}
             {(job?.localisation || job?.ville) && (
-              <div className="meta-item mobile-truncate-text" style={{ fontSize: '16px' }}>
+              <div className="meta-item job-detail-truncate-text" style={{ fontSize: '16px' }}>
                 <i className="fa fa-map-marker-alt"></i>
                 {stripHtml(job?.localisation || job?.ville)}
               </div>
@@ -209,9 +209,9 @@ export default function JobDetailPage() {
               {(bl?.texte_complet || bl?.description) && (
                 <div className="card" style={{ padding: '30px' }}>
                   <h3 style={{ color: 'var(--primary)', fontSize: '18px', marginBottom: '12px', fontWeight: 'bold' }}>Annonce</h3>
-                  <div className="mobile-table-wrapper">
+                  <div className="job-detail-table-wrapper">
                     <div 
-                      className="raw-annonce-content StandardTable"
+                      className="raw-annonce-content job-detail-standard-table"
                       style={{ overflowX: 'hidden', width: '100%' }}
                       dangerouslySetInnerHTML={{ __html: bl?.texte_complet || bl?.description || '' }}
                       ref={(el) => {
