@@ -2320,18 +2320,26 @@ footer {
     overflow-x: hidden;           /* clip anything that still escapes */
   }
 
+  /* AGGRESSIVE OVERRIDE: Prevent any injected inline style (e.g. width: 900px) from overflowing */
+  .raw-annonce-content * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   /* Tables scroll horizontally on mobile instead of overflowing */
   .table-responsive-wrapper {
     width: 100%;
-    overflow-x: auto;
+    overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
     display: block;
     margin: 24px 0;
   }
   
   .raw-annonce-content table {
-    width: 100%;
-    max-width: none; /* Allow table to be wider than screen inside the wrapper */
+    width: 100% !important;
+    max-width: none !important; /* Allow table to scroll horizontally inside wrapper */
+    display: block !important;
+    overflow-x: auto !important;
     margin: 0;
   }
 
