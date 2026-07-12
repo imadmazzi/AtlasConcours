@@ -2307,6 +2307,12 @@ footer {
 
 /* ── Mobile fix: prevent texte_complet overflow on small screens ─────────── */
 @media (max-width: 768px) {
+  /* Ensure the main page wrapper never exceeds screen width */
+  .page-job-detail {
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .raw-annonce-content {
     word-break: break-word;      /* break long unbreakable strings (URLs, codes) */
     white-space: normal;          /* don't preserve whitespace that causes overflow */
@@ -2315,12 +2321,18 @@ footer {
   }
 
   /* Tables scroll horizontally on mobile instead of overflowing */
-  .raw-annonce-content table {
-    display: block;
+  .table-responsive-wrapper {
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    white-space: nowrap;
-    max-width: 100%;
+    display: block;
+    margin: 24px 0;
+  }
+  
+  .raw-annonce-content table {
+    width: 100%;
+    max-width: none; /* Allow table to be wider than screen inside the wrapper */
+    margin: 0;
   }
 
   /* Images always contained on mobile */

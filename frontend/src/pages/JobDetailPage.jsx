@@ -217,6 +217,15 @@ export default function JobDetailPage() {
                         el.querySelectorAll('img').forEach(img => {
                           img.onerror = () => { img.style.display = 'none'; };
                         });
+                        // Wrap tables in responsive container for mobile scroll
+                        el.querySelectorAll('table').forEach(table => {
+                          if (!table.parentNode.classList.contains('table-responsive-wrapper')) {
+                            const wrapper = document.createElement('div');
+                            wrapper.className = 'table-responsive-wrapper';
+                            table.parentNode.insertBefore(wrapper, table);
+                            wrapper.appendChild(table);
+                          }
+                        });
                       }
                     }}
                   />
