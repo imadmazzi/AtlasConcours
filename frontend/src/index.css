@@ -2304,3 +2304,50 @@ footer {
   background: #e2e8f0;
   margin: 2em 0;
 }
+
+/* ── Mobile fix: prevent texte_complet overflow on small screens ─────────── */
+@media (max-width: 768px) {
+  .raw-annonce-content {
+    word-break: break-word;      /* break long unbreakable strings (URLs, codes) */
+    white-space: normal;          /* don't preserve whitespace that causes overflow */
+    max-width: 100%;              /* never exceed the viewport width */
+    overflow-x: hidden;           /* clip anything that still escapes */
+  }
+
+  /* Tables scroll horizontally on mobile instead of overflowing */
+  .raw-annonce-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
+  /* Images always contained on mobile */
+  .raw-annonce-content img {
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 12px auto;
+  }
+
+  /* Smaller font on mobile to avoid wrapping issues */
+  .raw-annonce-content {
+    font-size: 14px;
+  }
+
+  /* Lists don't overflow on small screens */
+  .raw-annonce-content ul,
+  .raw-annonce-content ol {
+    margin-left: 10px;
+    padding-left: 6px;
+  }
+
+  /* Prevent pre/code blocks from breaking layout */
+  .raw-annonce-content pre,
+  .raw-annonce-content code {
+    white-space: pre-wrap;
+    word-break: break-all;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}
