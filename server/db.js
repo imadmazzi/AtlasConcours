@@ -4,6 +4,7 @@ const { isExpired } = require('./utils/dateParser');
 const dns = require('dns');
 const https = require('https');
 const bcrypt = require('bcryptjs');
+const { MongoSnapshotStore } = require('./services/mongoSnapshotStore');
 
 // ─── Sanitize MONGODB_URI once at module load ────────────────────────────────
 // Vercel env vars pasted from dashboards often contain trailing spaces, hidden
@@ -268,15 +269,20 @@ const db = {
   data: JSON.parse(JSON.stringify(defaultData)),   // safe deep-clone of defaults
   storageMode: 'memory',                           // 'mongodb' | 'local' | 'memory'
   pendingSave: null,
+  saving: false,
+  saveRequested: false,
   lastMongoError: null,
 
   init: async function() {
     if (mongoUri) {
       try {
         this.collection = await getMongoCollection();
-        const doc = await this.collection.findOne({ _id: 'main_db' });
-        if (doc && doc.data) {
-          this.data = doc.data;
+        const { GridFSBucket } = require('mongodb');
+        this.snapshotStore = new MongoSnapshotStore(this.collection,
+          new GridFSBucket(_cachedClient.db(), { bucketName: 'store_snapshots' }));
+        const storedData = await this.snapshotStore.read();
+        if (storedData) {
+          this.data = storedData;
           this.storageMode = 'mongodb';
           this.lastMongoError = null;
           console.log('✅ Loaded data from MongoDB Atlas!');
@@ -317,6 +323,8 @@ const db = {
           console.error('💡 HINT: The cluster hostname in MONGODB_URI cannot be resolved. Check the connection string.');
         }
         console.error('══════════════════════════════════════════════════════════');
+        this.collection = null;
+        this.snapshotStore = null;
         this.loadLocal();
       }
     } else {
@@ -364,6 +372,7 @@ const db = {
     }
     try {
       this.data = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      this.storageMode = 'local';
       console.log('✅ Loaded data from local db.json!');
     } catch (e) {
       console.warn('⚠️ Cannot read db.json, using default in-memory data:', e.code);
@@ -371,26 +380,27 @@ const db = {
   },
 
   save: function() {
-    if (mongoUri && this.collection) {
-      this.pendingSave = this.collection.updateOne(
-        { _id: 'main_db' },
-        { $set: { data: this.data } },
-        { upsert: true }
-      )
-        .then(() => console.log('💾 Saved to MongoDB Atlas!'))
-        .catch(err => console.error('❌ Error saving to MongoDB Atlas:', err.message));
-      return this.pendingSave;
-    } else {
+    this.saveRequested = true;
+    if (this.saving) return this.pendingSave;
+    this.saving = true;
+    this.pendingSave = Promise.resolve().then(async () => {
       try {
-        fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2));
-        console.log('💾 Saved to local db.json!');
-        this.pendingSave = Promise.resolve();
-      } catch (e) {
-        // Silently skip on read-only filesystems (Vercel serverless)
-        console.warn('⚠️ Cannot write db.json (read-only FS), changes are in-memory only:', e.code);
-        this.pendingSave = Promise.resolve();
+        // Serialize writes and coalesce inserts that arrive during a save.
+        while (this.saveRequested) {
+          this.saveRequested = false;
+          if (this.storageMode === 'mongodb' && this.snapshotStore) {
+            await this.snapshotStore.write(this.data);
+          } else {
+            fs.writeFileSync(dbPath, JSON.stringify(this.data, null, 2));
+          }
+        }
+      } finally {
+        this.saving = false;
       }
-    }
+    });
+    // SQL-style callers do not await save(), but flush()/await save() must still
+    // reject on failure instead of reporting unsaved listings as successful.
+    this.pendingSave.catch(err => console.error('❌ Database save failed:', err.message));
     return this.pendingSave;
   },
 
@@ -399,14 +409,8 @@ const db = {
       await this.pendingSave;
     }
 
-    if (mongoUri && this.collection && this.storageMode === 'mongodb') {
-      await this.collection.updateOne(
-        { _id: 'main_db' },
-        { $set: { data: this.data } },
-        { upsert: true }
-      );
-      console.log('💾 MongoDB Atlas flush confirmed.');
-    }
+    // Include callers that mutate db.data directly without calling save().
+    await this.save();
   },
 
   
@@ -605,9 +609,10 @@ const db = {
    */
   syncFromAtlas: async function() {
     if (this.storageMode === 'mongodb' && this.collection) {
-      const doc = await this.collection.findOne({ _id: 'main_db' });
-      if (doc && doc.data) {
-        this.data = doc.data;
+      if (this.pendingSave) await this.pendingSave;
+      const storedData = await this.snapshotStore.read();
+      if (storedData) {
+        this.data = storedData;
       }
     }
   },

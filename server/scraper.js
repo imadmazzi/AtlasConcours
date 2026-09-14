@@ -6,6 +6,7 @@ const slugify = require('slugify');
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const { broadcastDirectConcours, broadcastDirectEmploi } = require('./services/telegramService');
 const { isExpired, parseDateLimite } = require('./utils/dateParser');
+const { createScraperRunners } = require('./services/scraperRunner');
 
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "VOTRE_CLE_API");
@@ -13,14 +14,15 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
 // ─── Serverless-aware constants ─────────────────────────────────────────────
 const IS_VERCEL      = !!process.env.VERCEL;
-const ITEM_LIMIT     = IS_VERCEL ? 100 : 500;  // max items per source per run
-const MAX_PAGES      = IS_VERCEL ? 30 : 30;    // max pages to scrape per source
+const ITEM_LIMIT     = IS_VERCEL ? 5 : 500;    // bounded to finish within Vercel's 60s limit
+const MAX_PAGES      = IS_VERCEL ? 5 : 30;
 const FETCH_TIMEOUT  = Number(process.env.SCRAPER_FETCH_TIMEOUT_MS) || 20000;
-const AI_REWRITE_TIMEOUT = Number(process.env.SCRAPER_AI_TIMEOUT_MS) || 15000;
+const AI_REWRITE_TIMEOUT = Number(process.env.SCRAPER_AI_TIMEOUT_MS) || (IS_VERCEL ? 7500 : 15000);
 const RETRY_COUNT    = IS_VERCEL ? 1  : 2;
 const RETRY_DELAY    = IS_VERCEL ? 500 : 2000;
 const BATCH_DELAY    = IS_VERCEL ? 0   : 2000; // inter-batch sleep (ms)
 const REWRITE_BATCH  = IS_VERCEL ? 1   : 3;    // items per AI rewrite call
+const AI_REWRITE_ENABLED = !IS_VERCEL || process.env.SCRAPER_REWRITE_WITH_AI === 'true';
 const EMPLOI_PUBLIC_BASE = "https://www.emploi-public.ma";
 const EMPLOI_PUBLIC_UUID_RE = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
 const EMPLOI_PUBLIC_KIND_RE = /\/(fr|ar)\/(concours|emploi-sup)\/details\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
@@ -294,7 +296,7 @@ function triggerJobFailover(source, reason = "No items found") {
 async function fetchWithRetry(url, options = {}, retries = RETRY_COUNT) {
   for (let i = 0; i <= retries; i++) {
     try {
-      return await scraperGet(url, { ...options, timeout: FETCH_TIMEOUT });
+      return await scraperGet(url, { ...options, timeout: options.timeout || FETCH_TIMEOUT });
     } catch (err) {
       if (i === retries) throw err;
       console.warn(`⚠️ Retrying (${i + 1}/${retries}) for ${url}...`);
@@ -312,7 +314,7 @@ async function rewriteBatch(items, type = "concours") {
   // ── Quota-exceeded / no API key fallback ───────────────────────────────────
   // Returns a bilingual shell using the raw scraped data so the pipeline keeps
   // working.  Arabic falls back to French text (will be blank-ish but safe).
-  if (aiQuotaExceeded || !process.env.GEMINI_API_KEY || items.length === 0) {
+  if (!AI_REWRITE_ENABLED || aiQuotaExceeded || !process.env.GEMINI_API_KEY || items.length === 0) {
     return items.map(item => ({
       ...item,
       rewritten: {
@@ -548,7 +550,9 @@ function insertItemNow(item, type) {
  */
 function extractCleanHtml($) {
   // Target only specific detail containers first, not the whole body
-  let el = $('.offres-details').length ? $('.offres-details') 
+  let el = $('#annonce_emploi, .bloc-affiche-offre').first().length ? $('#annonce_emploi, .bloc-affiche-offre').first()
+         : $('.s-content-box.full').length ? $('.s-content-box.full').first()
+         : $('.offres-details').length ? $('.offres-details')
          : $('.detail-offre').length ? $('.detail-offre')
          : $('.bloc_offre_home').length ? $('.bloc_offre_home')
          : $('.detail-content').length ? $('.detail-content')
@@ -578,6 +582,14 @@ function extractCleanHtml($) {
   // Strip accessibility injected strings that ruin layout
   html = html.replace(/front_office\.accessibilite[a-zA-Z0-9_]*/gi, '');
   
+  // A source layout change must not turn navigation, related listings, or an
+  // entire portal page into stored listing text. Keep descriptions useful and
+  // small enough for the database snapshot.
+  const MAX_DESCRIPTION_LENGTH = 50000;
+  if (html.length > MAX_DESCRIPTION_LENGTH) {
+    console.warn(`⚠️ Truncated oversized scraped description (${html.length} chars).`);
+    html = `${html.slice(0, MAX_DESCRIPTION_LENGTH)}<p>…</p>`;
+  }
   return html.trim();
 }
 
@@ -941,4 +953,58 @@ async function runAnapecScraper(force = false) {
   }
 }
 
-module.exports = { runScraper, runJobScraper, runAnapecScraper, normalizeEmploiPublicUrl, validateEmploiPublicUrl };
+function validateEmploiPublicResponse(response, url) {
+  const finalUrl = SCRAPINGBEE_API_KEY ? url : (response.request?.res?.responseUrl || url);
+  if (response.status === 404 || response.status >= 500) return { ok: false, reason: `HTTP ${response.status}` };
+  if (!finalUrl.includes('/details/')) return { ok: false, reason: `redirected to ${finalUrl}` };
+  if (isEmploiPublic404Page(response.data)) return { ok: false, reason: 'official 404 page' };
+  if (!isEmploiPublicDetailPage(response.data)) return { ok: false, reason: 'missing detail page markers' };
+  return { ok: true };
+}
+
+async function fetchScraperPage(url, context) {
+  const remaining = context.remaining();
+  const response = await fetchWithRetry(url, {
+    headers: { 'User-Agent': 'Mozilla/5.0' },
+    httpsAgent,
+    maxRedirects: 5,
+    validateStatus: () => true,
+    timeout: Math.min(FETCH_TIMEOUT, Math.max(1000, remaining - 1000)),
+  });
+  if (response.status >= 400) throw new Error(`HTTP ${response.status} while fetching ${url}`);
+  return response;
+}
+
+// Each invocation handles a small, durable batch. This prevents Vercel from
+// timing out midway through a large scrape and makes the next scheduled run
+// continue from the first unprocessed listing.
+const reliableScrapers = createScraperRunners({
+  db,
+  fetchPage: fetchScraperPage,
+  normalizeUrl: normalizeEmploiPublicUrl,
+  extractHtml: extractCleanHtml,
+  validateDetail: validateEmploiPublicResponse,
+  rewrite: rewriteBatch,
+  insert: insertItemNow,
+});
+
+module.exports = {
+  runScraper: (force, options = {}) => reliableScrapers.runScraper(force, {
+    maxItems: options.maxItems || ITEM_LIMIT,
+    maxPages: options.maxPages || MAX_PAGES,
+    ...options,
+  }),
+  runJobScraper: (force, options = {}) => reliableScrapers.runJobScraper(force, {
+    maxItems: options.maxItems || ITEM_LIMIT,
+    maxPages: options.maxPages || MAX_PAGES,
+    ...options,
+  }),
+  runAnapecScraper: (force, options = {}) => reliableScrapers.runAnapecScraper(force, {
+    maxItems: options.maxItems || ITEM_LIMIT,
+    maxPages: options.maxPages || MAX_PAGES,
+    ...options,
+  }),
+  normalizeEmploiPublicUrl,
+  validateEmploiPublicUrl,
+  _internal: { extractCleanHtml, validateEmploiPublicResponse, fetchScraperPage },
+};

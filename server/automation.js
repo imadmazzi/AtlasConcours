@@ -64,7 +64,9 @@ async function runAutomatedScraperPipeline({ trigger = 'manual', sources, force 
     try {
       logAutomation(`Starting ${source} scraper.`);
       results[source] = await SCRAPER_SOURCES[source](force);
-      logAutomation(`Finished ${source} scraper in ${Date.now() - sourceStartedAt}ms: ${JSON.stringify(results[source])}`);
+      const result = results[source];
+      const message = `Finished ${source} scraper in ${Date.now() - sourceStartedAt}ms: ${JSON.stringify(result)}`;
+      logAutomation(message, result?.errors ? 'error' : 'log');
     } catch (err) {
       results[source] = { added: 0, errors: 1, error: err.message };
       logAutomation(`${source} scraper failed but automation will continue: ${err.stack || err.message}`, 'error');

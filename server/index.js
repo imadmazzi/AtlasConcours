@@ -299,16 +299,19 @@ app.get('/api/cron-scraper', async (req, res) => {
       cronLog('Starting Vercel anapec scraper.');
       results.anapec = await runAnapecScraper(force);
       cronLog(`Finished Vercel anapec scraper: ${JSON.stringify(results.anapec)}`);
+      if (results.anapec.errors) throw new Error(`ANAPEC scraper completed with ${results.anapec.errors} error(s): ${results.anapec.error || 'see logs'}`);
     }
     if (source === 'jobs' || source === 'all') {
       cronLog('Starting Vercel jobs scraper.');
       results.jobs = await runJobScraper(force);
       cronLog(`Finished Vercel jobs scraper: ${JSON.stringify(results.jobs)}`);
+      if (results.jobs.errors) throw new Error(`Jobs scraper completed with ${results.jobs.errors} error(s): ${results.jobs.error || 'see logs'}`);
     }
     if (source === 'concours' || source === 'all') {
       cronLog('Starting Vercel concours scraper.');
       results.concours = await runScraper(force);
       cronLog(`Finished Vercel concours scraper: ${JSON.stringify(results.concours)}`);
+      if (results.concours.errors) throw new Error(`Concours scraper completed with ${results.concours.errors} error(s): ${results.concours.error || 'see logs'}`);
     }
     if (!['anapec', 'jobs', 'concours', 'all'].includes(source)) {
       throw new Error(`Unknown scraper source "${source}".`);

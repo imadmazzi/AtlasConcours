@@ -17,7 +17,7 @@ async function testUrl(label, url, check) {
       validateStatus: () => true,
     });
     console.log(`   ✅ HTTP ${res.status} — Content-Length: ${String(res.data).length} bytes`);
-    if (check) check(res);
+    if (check) await check(res);
   } catch (err) {
     console.error(`   ❌ FAILED: ${err.message}`);
   }
@@ -49,6 +49,7 @@ async function run() {
       const altRows = $('tr').length;
       const altCards = $('[class*="offre"]').length + $('[class*="job"]').length;
       console.log(`   Alt: <tr> count=${altRows}, offre/job class elements=${altCards}`);
+      console.log('   Columns:', $('table tr').filter((i, el) => $(el).find('a.nyroModal').length).first().find('td').map((i, el) => $(el).text().trim().replace(/\s+/g, ' ')).get());
     }
   );
 
@@ -56,7 +57,7 @@ async function run() {
   await testUrl(
     'EMPLOI-PUBLIC CONCOURS',
     'https://www.emploi-public.ma/fr/concours-liste',
-    (res) => {
+    async (res) => {
       const $ = cheerio.load(res.data);
       const cards = $('a.card.card-scale');
       console.log(`   📋 a.card.card-scale found: ${cards.length}`);
@@ -72,6 +73,15 @@ async function run() {
       } else {
         const firstHref = $(cards[0]).attr('href') || '';
         console.log(`   ✅ First card href: ${firstHref}`);
+        console.log('   Load-more controls:', $('a[href*="loadCards"]').map((i, el) => $(el).prop('outerHTML')).get());
+        console.log('   Script URLs:', $('script[src]').map((i, el) => $(el).attr('src')).get());
+        console.log('   Pagination controls:', $('[class*="pagin"], [class*="load"] [data-page]').map((i, el) => $(el).prop('outerHTML')).get().join('\n').slice(0, 3000));
+        console.log('   Pagination scripts:', $('script:not([src])').map((i, el) => $(el).html()).get().filter(s => /loadCards|loadMore|offset|pageNumber/.test(s)).join('\n').slice(0, 9000));
+        await testUrl('CONCOURS DETAIL', new URL(firstHref, 'https://www.emploi-public.ma').href, detail => {
+          const d = cheerio.load(detail.data);
+          console.log('   Detail containers:', d('h2').filter((i, el) => /Description|Détail/.test(d(el).text())).map((i, el) => d(el).parents().slice(0, 4).map((j, p) => `${p.tagName}.${d(p).attr('class') || ''}`).get().join(' > ')).get());
+          console.log('   Broad 404 matches:', String(detail.data).match(/.{0,50}\b404\b.{0,50}/g)?.slice(0, 3) || []);
+        });
       }
     }
   );
