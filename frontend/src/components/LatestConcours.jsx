@@ -44,24 +44,24 @@ export default function LatestConcours() {
           {!loading && concours.map(c => {
             const bl = getBilingual(c, isAr);
             return (
-            <div key={c.id} className="card">
+            <div key={c.id} className="card latest-concours-card">
               <div className="card-top">
                 <span className={getBadge(c.categorie)}>{c.categorie || 'Général'}</span>
               </div>
               <h3 style={{ display: 'flex', alignItems: 'center' }}>
                 {c.imageUrl ? (
-                  <img src={c.imageUrl} alt="" className="w-10 h-10 object-contain rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, flexShrink: 0 }} />
+                  <img src={c.imageUrl} alt="" className="latest-concours-logo w-10 h-10 object-contain rounded-md bg-slate-100 mr-3 inline-block align-middle" style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 6, backgroundColor: '#f1f5f9', marginRight: 12, flexShrink: 0 }} />
                 ) : (
                   <div className="w-10 h-10 rounded-md flex items-center justify-center mr-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 8, backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', marginRight: 12, flexShrink: 0 }}>
                     <i className="fa fa-university text-blue-600 text-lg" style={{ fontSize: 18, color: '#2563eb' }}></i>
                   </div>
                 )}
-                <span style={{ flex: 1 }}>{bl.titre}</span>
+                <span className="latest-concours-title" style={{ flex: 1 }}>{bl.titre}</span>
               </h3>
               <p className="card-body">
                 {(bl.description || '').replace(/<[^>]*>/g, '').substring(0, 120)}...
               </p>
-              <div className="card-footer">
+              <div className="card-footer latest-concours-footer">
                 <div className="card-date">
                   <i className="fa fa-calendar"></i>
                   Limite: {formatDate(c.date_limite)}

@@ -1626,7 +1626,7 @@ footer {
   }
 
   /* Cards — the primary containers for scraped/structured content */
-  .card,
+  .page-job-detail .card,
   .concours-desc-card,
   .concours-facts-card {
     max-width: 100%;
@@ -1657,13 +1657,13 @@ footer {
   .detail-main blockquote,
   .detail-main div,
   .detail-main p,
-  .card table,
-  .card img,
-  .card figure,
-  .card iframe,
-  .card pre,
-  .card div,
-  .card p,
+  .page-job-detail .card table,
+  .page-job-detail .card img,
+  .page-job-detail .card figure,
+  .page-job-detail .card iframe,
+  .page-job-detail .card pre,
+  .page-job-detail .card div,
+  .page-job-detail .card p,
   .concours-desc-card table,
   .concours-desc-card img,
   .concours-desc-card figure,
@@ -1679,7 +1679,7 @@ footer {
 
   /* Images & media: always scale down, never overflow */
   .detail-main img,
-  .card img,
+  .page-job-detail .card img,
   .concours-desc-card img {
     width: auto !important;
     height: auto !important;
@@ -1689,7 +1689,7 @@ footer {
   /* Tables: give them their own horizontal scroll zone
      so wide tables don't break the page layout */
   .detail-main table,
-  .card table,
+  .page-job-detail .card table,
   .concours-desc-card table {
     display: block;
     width: 100% !important;
@@ -1702,8 +1702,8 @@ footer {
   /* Table cells still wrap their own text */
   .detail-main table td,
   .detail-main table th,
-  .card table td,
-  .card table th,
+  .page-job-detail .card table td,
+  .page-job-detail .card table th,
   .concours-desc-card table td,
   .concours-desc-card table th {
     white-space: normal !important;
@@ -1713,7 +1713,7 @@ footer {
 
   /* iframes: contain within viewport */
   .detail-main iframe,
-  .card iframe,
+  .page-job-detail .card iframe,
   .concours-desc-card iframe {
     width: 100% !important;
     height: auto !important;
@@ -1721,7 +1721,7 @@ footer {
 
   /* pre / code blocks: allow internal horizontal scroll */
   .detail-main pre,
-  .card pre,
+  .page-job-detail .card pre,
   .concours-desc-card pre {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -1740,6 +1740,47 @@ footer {
   .breadcrumb {
     flex-wrap: wrap;
     row-gap: 4px;
+  }
+}
+
+/* Homepage concours cards: keep logo, title, deadline and CTA readable on phones. */
+@media (max-width: 600px) {
+  .latest-concours-card {
+    min-width: 0;
+    padding: 18px;
+  }
+
+  .latest-concours-card h3 {
+    align-items: flex-start !important;
+    min-width: 0;
+  }
+
+  .latest-concours-logo {
+    width: 36px !important;
+    height: 36px !important;
+    max-width: 36px !important;
+    margin-right: 10px !important;
+    flex: 0 0 36px;
+  }
+
+  .latest-concours-title {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .latest-concours-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .latest-concours-footer .card-date {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .latest-concours-footer .btn-primary {
+    justify-content: center;
   }
 }
 
